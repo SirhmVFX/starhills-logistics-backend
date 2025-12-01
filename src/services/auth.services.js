@@ -6,6 +6,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwtUtils.js";
 import { sendOtpEmail, sendWelcomeEmail } from "../sendgrid/email.js";
+import { token } from "morgan";
 
 const ACCESS_COOKIE_NAME = "access_token";
 const REFRESH_COOKIE_NAME = "refresh_token";
@@ -236,14 +237,42 @@ export const verifyOtpService = async (req, res) => {
       data: { isEmailVerified: true },
     });
 
+    // Generate new tokens
+    const accessToken = signAccessToken(updatedUser);
+    const refreshToken = signRefreshToken(updatedUser);
+
+    // Update refresh token in the database
+    await prisma.user.update({
+      where: { id: updatedUser.id },
+      data: { refreshToken },
+    });
+
+    // Clean up the used OTP
     await prisma.otp.delete({ where: { id: otpEntry.id } });
+
+    // Set cookies
+    res.cookie(ACCESS_COOKIE_NAME, accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
+      ...cookieOptions,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     return res.status(200).json({
       message: "Email verified successfully.",
       user: {
         id: updatedUser.id,
         email: updatedUser.email,
+        fullName: updatedUser.fullName,
         isEmailVerified: updatedUser.isEmailVerified,
+        role: updatedUser.role,
+      },
+      token: {
+        accessToken,
+        refreshToken,
       },
     });
   } catch (error) {
