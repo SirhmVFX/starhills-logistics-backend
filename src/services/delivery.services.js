@@ -34,12 +34,7 @@ export const createDeliveryService = async (req, res) => {
       },
     });
 
-    return res.status(200).json({
-      message: "Address validated successfully",
-      provider: "ShipBubble",
-      validation: validated.data,
-      delivery,
-    });
+    return { delivery, validation: validated.data };
   } catch (error) {
     console.error("ShipBubble Error:", error?.response?.data || error.message);
     return res.status(500).json({
@@ -143,10 +138,7 @@ export const trackDeliveryService = async (req, res) => {
       }
     );
 
-    return res.status(200).json({
-      message: "Delivery tracked successfully",
-      data: response.data,
-    });
+    return response.data;
   } catch (error) {
     return res.status(500).json({
       message: "Failed to track delivery",
@@ -184,10 +176,7 @@ export const cancelDeliveryService = async (req, res) => {
       data: { status: "cancelled" },
     });
 
-    return res.status(200).json({
-      message: "Delivery cancelled successfully",
-      data: response.data,
-    });
+    return updated;
   } catch (error) {
     return res.status(500).json({
       message: "Failed to cancel delivery",
@@ -196,40 +185,22 @@ export const cancelDeliveryService = async (req, res) => {
   }
 };
 
-export const rateDeliveryService = async (req, res) => {
-  try {
-    const { trackingNumber, rating, comment } = req.body;
+export const rateDeliveryService = async (
+  deliveryId,
+  userId,
+  { rating, comment }
+) => {
+  const delivery = await prisma.delivery.findUnique({
+    where: { id: deliveryId },
+  });
+  if (!delivery) throw new Error("Delivery not found");
 
-    if (!trackingNumber || !rating) {
-      return res
-        .status(400)
-        .json({ message: "Tracking number and rating are required" });
-    }
-
-    const delivery = await prisma.delivery.findUnique({
-      where: { trackingNumber },
-    });
-    if (!delivery) {
-      return res.status(404).json({ message: "Delivery not found" });
-    }
-
-    const rate = await prisma.rating.create({
-      data: {
-        trackingNumber,
-        rating,
-        comment,
-        deliveryId: delivery.id,
-      },
-    });
-
-    return res.status(200).json({
-      message: "Delivery rated successfully",
-      rating: rate,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Failed to rate delivery",
-      error,
-    });
-  }
+  return prisma.rating.create({
+    data: {
+      deliveryId,
+      userId,
+      rating,
+      comment,
+    },
+  });
 };

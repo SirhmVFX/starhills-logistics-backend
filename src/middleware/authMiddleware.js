@@ -10,7 +10,9 @@ export const authMiddleware = (req, res, next) => {
 
   try {
     const payload = verifyAccessToken(accessToken);
-    req.user = { id: payload.id, email: payload.email };
+    req.user = {
+      ...payload,
+    };
     return next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid or expired access token" });

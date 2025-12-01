@@ -7,13 +7,14 @@ import {
   rateDelivery,
   trackDelivery,
 } from "../controllers/delivery.controller.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
-router.post("/deliveries", createDelivery);
-router.get("/deliveries/:id/track", trackDelivery);
-router.post("/deliveries/:id/shipments", createShipment);
-router.get("/deliveries/:id", getDeliveryDetails);
-router.delete("/deliveries/:id", cancelDelivery);
-router.post("/deliveries/:id/rate", rateDelivery);
+router.post("/deliveries", authMiddleware, createDelivery);
+router.get("/deliveries/track", authMiddleware, trackDelivery); // Changed to query param
+router.post("/deliveries/:id/shipments", authMiddleware, createShipment);
+router.get("/deliveries/:id", authMiddleware, getDeliveryDetails);
+router.delete("/deliveries/:id", authMiddleware, cancelDelivery);
+router.post("/deliveries/:id/rate", authMiddleware, rateDelivery);
 
 export default router;

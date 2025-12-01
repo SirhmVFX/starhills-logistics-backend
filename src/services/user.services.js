@@ -11,9 +11,7 @@ export const getUserService = async (userId) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res
-      .status(200)
-      .json({ message: "User fetched successfully", user: user });
+    return user;
   } catch (error) {}
 };
 
@@ -21,12 +19,24 @@ export const updateUserService = async (userId, data) => {
   try {
     const user = await prisma.user.update({
       where: { id: userId },
-      data: data,
+      data: {
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        profile: data.profile
+          ? {
+              upsert: {
+                create: { ...data.profile },
+                update: { ...data.profile },
+              },
+            }
+          : undefined,
+      },
+      include: {
+        profile: true,
+      },
     });
-
-    return res
-      .status(200)
-      .json({ message: "User updated successfully", user: user });
+    return user;
   } catch (error) {
     return res
       .status(500)
@@ -34,40 +44,40 @@ export const updateUserService = async (userId, data) => {
   }
 };
 
-export const uploadIdService = async (userId, data) => {
-  //   try {
-  //     // multer middleware stores files in req.files
-  //     const { ninDocument, selfie } = req.files;
-  //     const ninPath = await s3Service.uploadFile(ninDocument[0]);
-  //     const selfiePath = await s3Service.uploadFile(selfie[0]);
-  //     const profile = await prisma.profile.update({
-  //       where: { userId: req.user.id },
-  //       data: { ninDocument: ninPath, selfie: selfiePath },
-  //     });
-  //     sendResponse(res, profile);
-  //   } catch (err) {
-  //     next(err);
-  //   }
-};
-
-export const bankVerifyService = async (req, res) => {
+export const updateProfilePictureService = async (userId, file) => {
   try {
-    const { bankName, accountNumber, accountName, bvn } = req.body;
+    const fileUrl = `/uploads/profiles/${file.filename}`;
 
-    const bankAccount = await prisma.bankAccount.upsert({
-      where: { userId: req.user.id },
-      update: { accountNumber, accountName, bankName, verified: true },
-      create: {
-        userId: req.user.id,
-        accountNumber,
-        accountName,
-        bankName,
-        bvn,
-        verified: true,
+    // Update user's profile with the new picture URL
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        profile: {
+          upsert: {
+            create: { profilePicture: fileUrl },
+            update: { profilePicture: fileUrl },
+          },
+        },
       },
+      include: { profile: true },
     });
-    sendResponse(res, bankAccount);
-  } catch (err) {
-    next(err);
+
+    // Delete old profile picture if it exists
+    if (user.profile?.profilePicture) {
+      const oldFilePath = path.join(
+        process.cwd(),
+        "public",
+        user.profile.profilePicture
+      );
+      await deleteFile(oldFilePath);
+    }
+
+    return user;
+  } catch (error) {
+    // Delete the uploaded file if there was an error
+    if (file?.path) {
+      await deleteFile(file.path);
+    }
+    throw error;
   }
 };

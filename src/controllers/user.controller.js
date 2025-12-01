@@ -1,8 +1,8 @@
+import { upload } from "../services/file.services.js";
 import {
-  bankVerifyService,
   getUserService,
+  updateProfilePictureService,
   updateUserService,
-  uploadIdService,
 } from "../services/user.services.js";
 
 const handleResponse = (res, status, message, data) => {
@@ -11,8 +11,7 @@ const handleResponse = (res, status, message, data) => {
 
 export const getUser = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const user = await getUserService(userId);
+    const user = await getUserService(req.user.id);
     handleResponse(res, 200, "User fetched successfully", user);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
@@ -21,38 +20,23 @@ export const getUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const data = req.body;
-    const user = await updateUserService(userId, data);
-    handleResponse(res, 200, "User updated successfully", user);
+    await updateUserService(req, res);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }
 };
 
-export const uploadId = async (req, res) => {
+export const uploadProfilePicture = async (req, res) => {
   try {
-    const userId = req.params.id;
-    const data = req.body;
-    const user = await uploadIdService(userId, data);
-    handleResponse(res, 200, "User updated successfully", user);
+    if (!req.file) {
+      return handleResponse(res, 400, "No file uploaded", null);
+    }
+
+    const user = await updateProfilePictureService(req.user.id, req.file);
+    handleResponse(res, 200, "Profile picture updated successfully", user);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }
 };
 
-export const bankVerify = async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const { bankName, accountNumber, accountName, bvn } = req.body;
-    const user = await bankVerifyService(userId, {
-      bankName,
-      accountNumber,
-      accountName,
-      bvn,
-    });
-    handleResponse(res, 200, "User updated successfully", user);
-  } catch (error) {
-    handleResponse(res, 500, error.message, null);
-  }
-};
+export const uploadProfilePictureHandler = upload.single("profilePicture");

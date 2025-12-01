@@ -87,6 +87,89 @@ export default {
           confirmPassword: { type: "string", format: "password" },
         },
       },
+      Delivery: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          name: { type: "string" },
+          email: { type: "string", format: "email" },
+          phone: { type: "string" },
+          address: { type: "string" },
+          latitude: { type: "number", format: "float" },
+          longitude: { type: "number", format: "float" },
+          status: {
+            type: "string",
+            enum: [
+              "address_validated",
+              "shipment_created",
+              "in_transit",
+              "delivered",
+              "cancelled",
+            ],
+          },
+          trackingNumber: { type: "string" },
+          shipbubbleId: { type: "string" },
+          validationResponse: { type: "object" },
+          metadata: { type: "object" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+
+      Shipment: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          trackingNumber: { type: "string" },
+          status: { type: "string" },
+          labelUrl: { type: "string", format: "uri" },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+
+      Rating: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          deliveryId: { type: "string" },
+          userId: { type: "string" },
+          rating: { type: "number", minimum: 1, maximum: 5 },
+          comment: { type: "string", nullable: true },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
+      Profile: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          profilePicture: {
+            type: "string",
+            description: "URL to the profile picture",
+          },
+          nin: { type: "string" },
+          ninDocument: { type: "string" },
+          selfie: { type: "string" },
+          bvn: { type: "string" },
+        },
+      },
+      Wallet: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          balance: { type: "number", format: "float" },
+        },
+      },
+      BankAccount: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          accountNumber: { type: "string" },
+          accountName: { type: "string" },
+          bankName: { type: "string" },
+          bvn: { type: "string" },
+          verified: { type: "boolean" },
+        },
+      },
       AuthResponse: {
         type: "object",
         properties: {
@@ -106,6 +189,14 @@ export default {
     {
       name: "Users",
       description: "User management",
+    },
+    {
+      name: "User Profile",
+      description: "User profile management",
+    },
+    {
+      name: "Deliveries",
+      description: "Delivery management endpoints",
     },
   ],
   paths: {
@@ -585,6 +676,454 @@ export default {
               },
             },
           },
+        },
+      },
+    },
+    "/api/users/me": {
+      get: {
+        tags: ["User Profile"],
+        summary: "Get current user's profile",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "User profile retrieved successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/User",
+                  properties: {
+                    profile: { $ref: "#/components/schemas/Profile" },
+                    wallet: { $ref: "#/components/schemas/Wallet" },
+                    bankAccount: { $ref: "#/components/schemas/BankAccount" },
+                  },
+                },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+    "/api/users/me/update": {
+      put: {
+        tags: ["User Profile"],
+        summary: "Update user profile",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  fullName: { type: "string" },
+                  email: { type: "string", format: "email" },
+                  phone: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Profile updated successfully",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/User" },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+    "/api/users/me/upload-picture": {
+      post: {
+        tags: ["User Profile"],
+        summary: "Upload or update profile picture",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                properties: {
+                  profilePicture: {
+                    type: "string",
+                    format: "binary",
+                    description: "Image file (JPG, PNG, JPEG) up to 5MB",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Profile picture updated successfully",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/User" },
+              },
+            },
+          },
+          400: {
+            description: "No file uploaded or invalid file type",
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/Error" },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+    // In src/docs/swagger.js - Add to the paths object
+
+    "/api/v1/deliveries": {
+      post: {
+        tags: ["Deliveries"],
+        summary: "Create a new delivery",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: [
+                  "name",
+                  "email",
+                  "phone",
+                  "latitude",
+                  "longitude",
+                  "address",
+                ],
+                properties: {
+                  name: { type: "string", example: "John Doe" },
+                  email: {
+                    type: "string",
+                    format: "email",
+                    example: "john@example.com",
+                  },
+                  phone: { type: "string", example: "+1234567890" },
+                  latitude: {
+                    type: "number",
+                    format: "float",
+                    example: 6.5244,
+                  },
+                  longitude: {
+                    type: "number",
+                    format: "float",
+                    example: 3.3792,
+                  },
+                  address: { type: "string", example: "123 Main St, Lagos" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Delivery created successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "number", example: 200 },
+                    message: {
+                      type: "string",
+                      example: "Delivery created successfully",
+                    },
+                    data: {
+                      type: "object",
+                      properties: {
+                        delivery: { $ref: "#/components/schemas/Delivery" },
+                        validation: { type: "object" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // Track Delivery
+    "/api/v1/deliveries/track": {
+      get: {
+        tags: ["Deliveries"],
+        summary: "Track a delivery",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "trackingNumber",
+            in: "query",
+            required: true,
+            schema: { type: "string" },
+            description: "Tracking number of the delivery",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Delivery tracked successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "number", example: 200 },
+                    message: {
+                      type: "string",
+                      example: "Delivery tracked successfully",
+                    },
+                    data: { type: "object" }, // Adjust based on ShipBubble response
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // Create Shipment
+    "/api/v1/deliveries/{id}/shipments": {
+      post: {
+        tags: ["Deliveries"],
+        summary: "Create a shipment for a delivery",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID of the delivery",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["parcel", "pickupAddressId"],
+                properties: {
+                  parcel: {
+                    type: "object",
+                    properties: {
+                      weight: { type: "number", example: 1.5 },
+                      length: { type: "number", example: 20 },
+                      width: { type: "number", example: 15 },
+                      height: { type: "number", example: 10 },
+                      items: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            name: { type: "string", example: "Product" },
+                            quantity: { type: "number", example: 1 },
+                            value: { type: "number", example: 1000 },
+                          },
+                        },
+                      },
+                    },
+                  },
+                  pickupAddressId: { type: "string", example: "pickup_123" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Shipment created successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "number", example: 200 },
+                    message: {
+                      type: "string",
+                      example: "Shipment created successfully",
+                    },
+                    data: { $ref: "#/components/schemas/Shipment" },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          404: { $ref: "#/components/responses/NotFound" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // Get Delivery Details
+    "/api/v1/deliveries/{id}": {
+      get: {
+        tags: ["Deliveries"],
+        summary: "Get delivery details",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID of the delivery",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Delivery details retrieved successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "number", example: 200 },
+                    message: {
+                      type: "string",
+                      example: "Delivery details retrieved successfully",
+                    },
+                    data: { $ref: "#/components/schemas/Delivery" },
+                  },
+                },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          404: { $ref: "#/components/responses/NotFound" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // Cancel Delivery
+    "/api/v1/deliveries/{id}": {
+      delete: {
+        tags: ["Deliveries"],
+        summary: "Cancel a delivery",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID of the delivery to cancel",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Delivery cancelled successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "number", example: 200 },
+                    message: {
+                      type: "string",
+                      example: "Delivery cancelled successfully",
+                    },
+                    data: { $ref: "#/components/schemas/Delivery" },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          404: { $ref: "#/components/responses/NotFound" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // Rate Delivery
+    "/api/v1/deliveries/{id}/rate": {
+      post: {
+        tags: ["Deliveries"],
+        summary: "Rate a delivery",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "ID of the delivery to rate",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["rating"],
+                properties: {
+                  rating: {
+                    type: "number",
+                    minimum: 1,
+                    maximum: 5,
+                    example: 5,
+                    description: "Rating from 1 to 5",
+                  },
+                  comment: {
+                    type: "string",
+                    example: "Great service!",
+                    description: "Optional comment about the delivery",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Delivery rated successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "number", example: 200 },
+                    message: {
+                      type: "string",
+                      example: "Delivery rated successfully",
+                    },
+                    data: { $ref: "#/components/schemas/Rating" },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          404: { $ref: "#/components/responses/NotFound" },
+          500: { $ref: "#/components/responses/ServerError" },
         },
       },
     },
