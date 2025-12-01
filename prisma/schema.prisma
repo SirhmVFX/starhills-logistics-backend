@@ -206,9 +206,9 @@ model Otp {
   phone       String @unique
   otp         String
   expiresAt   DateTime
-  password    String
-  fullName    String
-  email       String
+  password    String?
+  fullName    String?
+  email       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

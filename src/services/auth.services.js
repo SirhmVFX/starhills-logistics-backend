@@ -163,21 +163,25 @@ export const resendOtpService = async (req, res) => {
       return res.status(404).json({ message: "User not found for this email" });
     }
 
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-
     await prisma.otp.deleteMany({ where: { email } });
+
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await prisma.otp.create({
       data: {
-        email,
+        email: email,
         otp: newOtp,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min expiration
+        expiresAt: expiresAt,
+        fullName: user.fullName,
+        phone: user.phone,
+        password: user.password,
       },
     });
 
     const sent = await sendOtpEmail(user.email, user.fullName, newOtp);
     if (!sent) {
-      return res.status(500).json({ message: "Failed to resend OTP" });
+      return res.status(500).json({ message: "Failed to resend OTP to email" });
     }
 
     return res.status(200).json({
@@ -185,7 +189,10 @@ export const resendOtpService = async (req, res) => {
     });
   } catch (error) {
     console.error("Resend OTP Error:", error);
-    return res.status(500).json({ message: "Failed to resend OTP" });
+    return res.status(500).json({
+      message: "Failed to resend OTP to email",
+      error: error?.message || "Unknown error",
+    });
   }
 };
 
@@ -209,7 +216,9 @@ export const verifyOtpService = async (req, res) => {
         .json({ message: "No user found with this email number" });
     }
 
-    const otpEntry = await prisma.otp.findFirst({ where: { email, otp } });
+    const otpEntry = await prisma.otp.findFirst({
+      where: { email, otp: otp.toString() },
+    });
 
     if (!otpEntry) {
       return res.status(400).json({ message: "Invalid OTP" });
@@ -229,8 +238,12 @@ export const verifyOtpService = async (req, res) => {
     await prisma.otp.delete({ where: { id: otpEntry.id } });
 
     return res.status(200).json({
-      message: "Phone verified successfully.",
-      user: updatedUser,
+      message: "Email verified successfully.",
+      user: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        isEmailVerified: updatedUser.isEmailVerified,
+      },
     });
   } catch (error) {
     return res
