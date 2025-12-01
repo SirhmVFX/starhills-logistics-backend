@@ -150,12 +150,51 @@ export const registerService = async (req, res) => {
   }
 };
 
+export const resendOtpService = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email number is required" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found for this email" });
+    }
+
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await prisma.otp.deleteMany({ where: { email } });
+
+    await prisma.otp.create({
+      data: {
+        email,
+        otp: newOtp,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min expiration
+      },
+    });
+
+    const sent = await sendOtpEmail(user.email, user.fullName, newOtp);
+    if (!sent) {
+      return res.status(500).json({ message: "Failed to resend OTP" });
+    }
+
+    return res.status(200).json({
+      message: "OTP resent successfully. Check your email.",
+    });
+  } catch (error) {
+    console.error("Resend OTP Error:", error);
+    return res.status(500).json({ message: "Failed to resend OTP" });
+  }
+};
+
 export const verifyOtpService = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "email number is required" });
+      return res.status(400).json({ message: "email is required" });
     }
 
     if (!otp) {
@@ -535,5 +574,46 @@ export const updatePasswordService = async (req, res) => {
     return res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message });
+  }
+};
+
+export const devResetUserService = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "email number is required" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "No user found to delete" });
+    }
+
+    await prisma.wallet.deleteMany({
+      where: { userId: user.id },
+    });
+
+    await prisma.walletTransaction
+      ?.deleteMany({
+        where: { userId: user.id },
+      })
+      .catch(() => {});
+
+    await prisma.otp.deleteMany({ where: { email } });
+
+    await prisma.user.delete({
+      where: { id: user.id },
+    });
+
+    return res.status(200).json({
+      message: "data cleared successfully (user, wallet, OTP removed).",
+    });
+  } catch (error) {
+    console.error("Developer Reset Error:", error);
+    return res.status(500).json({
+      message: "Failed to reset user test data",
+      error: error.message,
+    });
   }
 };
