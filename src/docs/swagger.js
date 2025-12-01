@@ -8,7 +8,7 @@ export default {
   },
   servers: [
     {
-      url: "http://localhost:3000",
+      url: "https://starhills-logistcis-be-avbmfugsewgbcvg7.canadacentral-01.azurewebsites.net/",
       description: "Development server",
     },
   ],
@@ -110,7 +110,7 @@ export default {
   ],
   paths: {
     // Auth Endpoints
-    "/api/auth/register": {
+    "/api/v1/auth/register": {
       post: {
         tags: ["Authentication"],
         summary: "Register a new user",
@@ -148,7 +148,7 @@ export default {
         },
       },
     },
-    "/api/auth/verify-otp": {
+    "/api/v1/auth/verify-otp": {
       post: {
         tags: ["Authentication"],
         summary: "Verify OTP sent to user's email",
@@ -186,7 +186,7 @@ export default {
         },
       },
     },
-    "/api/auth/login": {
+    "/api/v1/auth/login": {
       post: {
         tags: ["Authentication"],
         summary: "User login",
@@ -233,7 +233,7 @@ export default {
         },
       },
     },
-    "/api/auth/logout": {
+    "/api/v1/auth/logout": {
       post: {
         tags: ["Authentication"],
         summary: "Logout user (clear cookies)",
@@ -255,7 +255,7 @@ export default {
         },
       },
     },
-    "/api/auth/forgot-password": {
+    "/api/v1/auth/forgot-password": {
       post: {
         tags: ["Authentication"],
         summary: "Request password reset OTP",
@@ -296,7 +296,7 @@ export default {
         },
       },
     },
-    "/api/auth/verify-password-otp": {
+    "/api/v1/auth/verify-password-otp": {
       post: {
         tags: ["Authentication"],
         summary: "Verify password reset OTP",
@@ -337,7 +337,7 @@ export default {
         },
       },
     },
-    "/api/auth/reset-password": {
+    "/api/v1/auth/reset-password": {
       post: {
         tags: ["Authentication"],
         summary: "Reset password",
@@ -378,7 +378,7 @@ export default {
         },
       },
     },
-    "/api/auth/refresh-token": {
+    "/api/v1/auth/refresh-token": {
       post: {
         tags: ["Authentication"],
         summary: "Refresh access token",
@@ -423,7 +423,7 @@ export default {
         },
       },
     },
-    "/api/auth/me": {
+    "/api/v1/auth/me": {
       get: {
         tags: ["Authentication"],
         summary: "Get current user profile",
