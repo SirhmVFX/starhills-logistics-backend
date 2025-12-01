@@ -1,0 +1,44 @@
+name: Deploy Starhills Logistics to Azure App Service
+
+on:
+  push:
+    branches: ["main"] # Change this to your main branch name if different
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: starhills-logistcis-be
+  AZURE_WEBAPP_PACKAGE_PATH: "src"
+  NODE_VERSION: "20" # Node.js version
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Build the app
+        run: npm run build --if-present
+        working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Zip the application files
+        run: zip -r app.zip . -x '*.git*' -x '*.github*' -x '*.env*'
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: "production"
+          publish-profile: ${{ secrets.AZURE_PUBLISHPROFILE }}
+          package: app.zip
