@@ -87,6 +87,48 @@ export default {
           confirmPassword: { type: "string", format: "password" },
         },
       },
+      Promotion: {
+        type: "object",
+        properties: {
+          id: { type: "string", format: "uuid" },
+          title: { type: "string", example: "Summer Sale" },
+          code: { type: "string", example: "SUMMER20" },
+          discount: { type: "number", format: "float", example: 20.5 },
+          expiryDate: { type: "string", format: "date-time" },
+          isActive: { type: "boolean", example: true },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      CreatePromotionRequest: {
+        type: "object",
+        required: ["title", "code", "discount", "expiryDate"],
+        properties: {
+          title: { type: "string", example: "Summer Sale" },
+          code: { type: "string", example: "SUMMER20" },
+          discount: { type: "number", format: "float", example: 20.5 },
+          expiryDate: {
+            type: "string",
+            format: "date-time",
+            example: "2024-12-31T23:59:59.000Z",
+          },
+          isActive: { type: "boolean", example: true },
+        },
+      },
+      UpdatePromotionRequest: {
+        type: "object",
+        properties: {
+          title: { type: "string", example: "Summer Sale Updated" },
+          code: { type: "string", example: "SUMMER25" },
+          discount: { type: "number", format: "float", example: 25.0 },
+          expiryDate: {
+            type: "string",
+            format: "date-time",
+            example: "2024-12-31T23:59:59.000Z",
+          },
+          isActive: { type: "boolean", example: true },
+        },
+      },
       Delivery: {
         type: "object",
         properties: {
@@ -1115,6 +1157,201 @@ export default {
                       example: "Delivery rated successfully",
                     },
                     data: { $ref: "#/components/schemas/Rating" },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          404: { $ref: "#/components/responses/NotFound" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // In the paths section, add the promotion endpoints:
+
+    "/api/v1/promotion": {
+      post: {
+        tags: ["Promotions"],
+        summary: "Create a new promotion",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreatePromotionRequest" },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: "Promotion created successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: {
+                      type: "string",
+                      example: "Promotion created successfully",
+                    },
+                    data: { $ref: "#/components/schemas/Promotion" },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // Get Promotion by Code
+    "/api/v1/promotion/code/{code}": {
+      get: {
+        tags: ["Promotions"],
+        summary: "Get promotion by code",
+        parameters: [
+          {
+            name: "code",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+            description: "Promotion code",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Promotion retrieved successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    data: { $ref: "#/components/schemas/Promotion" },
+                  },
+                },
+              },
+            },
+          },
+          404: { $ref: "#/components/responses/NotFound" },
+          400: { $ref: "#/components/responses/BadRequest" },
+        },
+      },
+    },
+
+    // Get All Promotions
+    "/api/v1/promotion": {
+      get: {
+        tags: ["Promotions"],
+        summary: "Get all promotions",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: "Promotions retrieved successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    data: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/Promotion" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+    },
+
+    // Update Promotion
+    "/api/v1/promotion/{id}": {
+      put: {
+        tags: ["Promotions"],
+        summary: "Update a promotion",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+            description: "Promotion ID",
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdatePromotionRequest" },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Promotion updated successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: {
+                      type: "string",
+                      example: "Promotion updated successfully",
+                    },
+                    data: { $ref: "#/components/schemas/Promotion" },
+                  },
+                },
+              },
+            },
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          404: { $ref: "#/components/responses/NotFound" },
+          500: { $ref: "#/components/responses/ServerError" },
+        },
+      },
+
+      // Delete Promotion
+      delete: {
+        tags: ["Promotions"],
+        summary: "Delete a promotion",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string", format: "uuid" },
+            description: "Promotion ID",
+          },
+        ],
+        responses: {
+          200: {
+            description: "Promotion deleted successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: {
+                      type: "string",
+                      example: "Promotion deleted successfully",
+                    },
                   },
                 },
               },

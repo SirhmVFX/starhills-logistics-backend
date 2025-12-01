@@ -7,7 +7,7 @@ import riderRoutes from "./routes/rider.routes.js";
 import rideRoutes from "./routes/ride.routes.js";
 import deliveryRoutes from "./routes/delivery.routes.js";
 import walletRoutes from "./routes/wallet.routes.js";
-import swaggerJsdoc from "swagger-jsdoc";
+import promotionRoutes from "./routes/promotion.routes.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./docs/swagger.js";
 import cookieParser from "cookie-parser";
@@ -26,6 +26,7 @@ app.use("/api/v1/rider", riderRoutes);
 app.use("/api/v1/ride", rideRoutes);
 app.use("/api/v1/delivery", deliveryRoutes);
 app.use("/api/v1/wallet", walletRoutes);
+app.use("/api/v1/promotion", promotionRoutes);
 
 app.use(
   "/api-docs",
