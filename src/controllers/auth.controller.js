@@ -1,9 +1,11 @@
 import {
+  devResetUserService,
   forgotPasswordService,
   loginService,
   logoutService,
   refreshTokenService,
   registerService,
+  resendOtpService,
   resetPasswordService,
   updatePasswordService,
   verfifyPasswordResetOtpService,
@@ -17,6 +19,14 @@ const handleResponse = (res, status, message, data) => {
 export const register = async (req, res) => {
   try {
     await registerService(req, res);
+  } catch (error) {
+    handleResponse(res, 500, error.message, null);
+  }
+};
+
+export const resendOtp = async (req, res) => {
+  try {
+    await resendOtpService(req, res);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }
@@ -81,6 +91,14 @@ export const refreshToken = async (req, res) => {
 export const updatePassword = async (req, res) => {
   try {
     await updatePasswordService(req, res);
+  } catch (error) {
+    handleResponse(res, 500, error.message, null);
+  }
+};
+
+export const devResetUser = async (req, res) => {
+  try {
+    await devResetUserService(req, res);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }
