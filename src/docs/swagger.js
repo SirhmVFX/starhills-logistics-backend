@@ -110,6 +110,142 @@ export default {
   ],
   paths: {
     // Auth Endpoints
+    "/api/v1/auth/resend-otp": {
+      post: {
+        tags: ["Authentication"],
+        summary: "Resend OTP to user's email",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["email"],
+                properties: {
+                  email: {
+                    type: "string",
+                    format: "email",
+                    description: "User's email address",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "OTP resent successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    message: {
+                      type: "string",
+                      example: "OTP resent successfully. Check your email.",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            $ref: "#/components/responses/BadRequest",
+          },
+          404: {
+            description: "User not found",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/Error",
+                },
+                example: {
+                  message: "User not found for this email",
+                },
+              },
+            },
+          },
+          500: {
+            $ref: "#/components/responses/ServerError",
+          },
+        },
+      },
+    },
+    "/api/v1/auth/dev-reset-user": {
+      post: {
+        tags: ["Authentication"],
+        summary: "[Development Only] Reset user data (for testing purposes)",
+        description:
+          "⚠️ WARNING: This endpoint is for development use only and should be disabled in production. It will permanently delete the user and all associated data.",
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["email"],
+                properties: {
+                  email: {
+                    type: "string",
+                    format: "email",
+                    description: "Email of the user to reset",
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "User data reset successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    message: {
+                      type: "string",
+                      example:
+                        "Data cleared successfully (user, wallet, OTP removed).",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            $ref: "#/components/responses/BadRequest",
+          },
+          401: {
+            $ref: "#/components/responses/Unauthorized",
+          },
+          403: {
+            $ref: "#/components/responses/Forbidden",
+          },
+          404: {
+            description: "User not found",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/Error",
+                },
+                example: {
+                  message: "No user found to delete",
+                },
+              },
+            },
+          },
+          500: {
+            $ref: "#/components/responses/ServerError",
+          },
+        },
+      },
+    },
     "/api/v1/auth/register": {
       post: {
         tags: ["Authentication"],
