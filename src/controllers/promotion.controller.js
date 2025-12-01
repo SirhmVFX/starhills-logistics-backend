@@ -1,11 +1,10 @@
-// src/controllers/promotion.controller.js
 import {
   createPromotionService,
   getPromotionByCodeService,
   getAllPromotionsService,
   updatePromotionService,
   deletePromotionService,
-} from "../services/promotion.service.js";
+} from "../services/promotion.services.js";
 
 export const createPromotion = async (req, res) => {
   try {
