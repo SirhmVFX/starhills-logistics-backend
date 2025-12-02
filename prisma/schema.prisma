@@ -33,7 +33,7 @@ model User {
   riderRides      Ride[]          @relation("RiderRides")
 
   // Delivery relations
-  sentDeliveries  Delivery[]      @relation("SenderDeliveries")
+  sentDeliveries  Delivery[]      @relation("SentDeliveries")
   riderDeliveries Delivery[]      @relation("RiderDeliveries")
 
   refreshToken    String?
@@ -147,23 +147,22 @@ model Ride {
 
 model Delivery {
   id        String   @id @default(uuid())
-
-  sender    User     @relation("SenderDeliveries", fields: [senderId], references: [id])
-  senderId  String
-
-  rider     User?    @relation("RiderDeliveries", fields: [riderId], references: [id])
-  riderId   String?
-
   originLat Float
   originLng Float
   destLat   Float
   destLng   Float
-
   status    DeliveryStatus @default(PENDING)
   price     Float
-
+  metadata  Json?          // Add this line
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  sender    User     @relation("SentDeliveries", fields: [senderId], references: [id])
+  senderId  String
+  rider     User?    @relation("RiderDeliveries", fields: [riderId], references: [id])
+  riderId   String?
+
+  @@map("deliveries")
 }
 
 
@@ -185,9 +184,6 @@ model Rating {
   createdAt DateTime @default(now())
 }
 
-
-
-// schema.prisma
 model Promotion {
   id          String   @id @default(uuid())
   title       String
