@@ -396,3 +396,28 @@ export const rateDeliveryService = async (
     },
   });
 };
+
+export const getCouriersService = async (req, res) => {
+  try {
+    const response = await axios.get(
+      "https://api.shipbubble.com/v1/shipping/couriers",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}`,
+        },
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Couriers retrieved successfully",
+      data: response.data.data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve couriers",
+      error: error?.response?.data || error.message,
+    });
+  }
+};

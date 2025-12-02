@@ -2,6 +2,7 @@ import {
   cancelDeliveryService,
   createDeliveryService,
   createShipmentService,
+  getCouriersService,
   getDeliveryDetailsService,
   getShippingRatesService,
   rateDeliveryService,
@@ -78,5 +79,13 @@ export const rateDelivery = async (req, res) => {
   } catch (error) {
     const status = error.message.includes("not found") ? 404 : 500;
     handleResponse(res, status, error.message, null);
+  }
+};
+
+export const getCouriers = async (req, res) => {
+  try {
+    await getCouriersService(req, res);
+  } catch (error) {
+    handleResponse(res, 500, error.message, null);
   }
 };
