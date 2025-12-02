@@ -8,7 +8,7 @@ export default {
   },
   servers: [
     {
-      url: "https://starhills-logistcis-be-avbmfugsewgbcvg7.canadacentral-01.azurewebsites.net/",
+      url: "http://localhost:3000/",
       description: "Development server",
     },
   ],
@@ -721,7 +721,7 @@ export default {
         },
       },
     },
-    "/api/users/me": {
+    "/api/user/me": {
       get: {
         tags: ["User Profile"],
         summary: "Get current user's profile",
@@ -747,7 +747,7 @@ export default {
         },
       },
     },
-    "/api/users/me/update": {
+    "/api/user/me/update": {
       put: {
         tags: ["User Profile"],
         summary: "Update user profile",
@@ -782,7 +782,7 @@ export default {
         },
       },
     },
-    "/api/users/me/upload-picture": {
+    "/api/user/me/upload-picture": {
       post: {
         tags: ["User Profile"],
         summary: "Upload or update profile picture",
@@ -828,7 +828,7 @@ export default {
     },
     // In src/docs/swagger.js - Add to the paths object
 
-    "/api/v1/deliveries": {
+    "/api/v1/delivery/deliveries": {
       post: {
         tags: ["Deliveries"],
         summary: "Create a new delivery",
@@ -904,7 +904,7 @@ export default {
     },
 
     // Track Delivery
-    "/api/v1/deliveries/track": {
+    "/api/v1/delivery/deliveries/track": {
       get: {
         tags: ["Deliveries"],
         summary: "Track a delivery",
@@ -945,7 +945,7 @@ export default {
     },
 
     // Create Shipment
-    "/api/v1/deliveries/{id}/shipments": {
+    "/api/v1/delivery/deliveries/{id}/shipments": {
       post: {
         tags: ["Deliveries"],
         summary: "Create a shipment for a delivery",
@@ -1021,7 +1021,7 @@ export default {
     },
 
     // Get Delivery Details
-    "/api/v1/deliveries/{id}": {
+    "/api/v1/delivery/deliveries/{id}": {
       get: {
         tags: ["Deliveries"],
         summary: "Get delivery details",
@@ -1062,7 +1062,7 @@ export default {
     },
 
     // Cancel Delivery
-    "/api/v1/deliveries/{id}": {
+    "/api/v1/delivery/deliveries/{id}": {
       delete: {
         tags: ["Deliveries"],
         summary: "Cancel a delivery",
@@ -1104,7 +1104,7 @@ export default {
     },
 
     // Rate Delivery
-    "/api/v1/deliveries/{id}/rate": {
+    "/api/v1/delivery/deliveries/{id}/rate": {
       post: {
         tags: ["Deliveries"],
         summary: "Rate a delivery",
