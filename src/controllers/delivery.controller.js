@@ -3,6 +3,8 @@ import {
   createDeliveryService,
   createShipmentService,
   getDeliveryDetailsService,
+  getShippingRatesService,
+  rateDeliveryService,
   trackDeliveryService,
 } from "../services/delivery.services.js";
 
@@ -12,8 +14,17 @@ const handleResponse = (res, status, message, data) => {
 
 export const createDelivery = async (req, res) => {
   try {
-    const result = await createDeliveryService(req.body);
+    const result = await createDeliveryService(req, res);
     handleResponse(res, 200, "Delivery created successfully", result);
+  } catch (error) {
+    handleResponse(res, 500, error.message, null);
+  }
+};
+
+export const getShippingRates = async (req, res) => {
+  try {
+    const result = await getShippingRatesService(req, res);
+    handleResponse(res, 200, "Rates fetched successfully", result);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }
