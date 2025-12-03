@@ -397,7 +397,7 @@ export const rateDeliveryService = async (
   });
 };
 
-export const getCouriersService = async (req, res) => {
+export const getCouriersService = async (res) => {
   try {
     const response = await axios.get(
       "https://api.shipbubble.com/v1/shipping/couriers",

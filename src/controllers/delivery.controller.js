@@ -84,7 +84,8 @@ export const rateDelivery = async (req, res) => {
 
 export const getCouriers = async (req, res) => {
   try {
-    await getCouriersService(req, res);
+    const response = await getCouriersService(res);
+    handleResponse(res, 200, "Couriers retrieved successfully", response.data);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }

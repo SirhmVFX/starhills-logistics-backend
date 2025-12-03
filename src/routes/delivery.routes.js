@@ -19,6 +19,6 @@ router.post("/deliveries/rates", authMiddleware, getShippingRates);
 router.get("/deliveries/:id", authMiddleware, getDeliveryDetails);
 router.delete("/deliveries/:id", authMiddleware, cancelDelivery);
 router.post("/deliveries/:id/rate", authMiddleware, rateDelivery);
-router.get("/deliveries/couriers", authMiddleware, getCouriers);
+router.get("/couriers", getCouriers);
 
 export default router;
