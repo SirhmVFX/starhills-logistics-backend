@@ -3,6 +3,7 @@ import {
   createDeliveryService,
   createShipmentService,
   getCouriersService,
+  getDeliveryCategoriesService,
   getDeliveryDetailsService,
   getShippingRatesService,
   rateDeliveryService,
@@ -86,6 +87,20 @@ export const getCouriers = async (req, res) => {
   try {
     const response = await getCouriersService(res);
     handleResponse(res, 200, "Couriers retrieved successfully", response.data);
+  } catch (error) {
+    handleResponse(res, 500, error.message, null);
+  }
+};
+
+export const getDeliveryCategories = async (req, res) => {
+  try {
+    const response = await getDeliveryCategoriesService(res);
+    handleResponse(
+      res,
+      200,
+      "Delivery categories retrieved successfully",
+      response.data
+    );
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }

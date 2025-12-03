@@ -4,6 +4,7 @@ import {
   createDelivery,
   createShipment,
   getCouriers,
+  getDeliveryCategories,
   getDeliveryDetails,
   getShippingRates,
   rateDelivery,
@@ -20,5 +21,6 @@ router.get("/deliveries/:id", authMiddleware, getDeliveryDetails);
 router.delete("/deliveries/:id", authMiddleware, cancelDelivery);
 router.post("/deliveries/:id/rate", authMiddleware, rateDelivery);
 router.get("/couriers", getCouriers);
+router.get("/categories", getDeliveryCategories);
 
 export default router;

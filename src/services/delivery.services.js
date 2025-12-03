@@ -421,3 +421,28 @@ export const getCouriersService = async (res) => {
     });
   }
 };
+
+export const getDeliveryCategoriesService = async (res) => {
+  try {
+    const response = await axios.get(
+      "https://api.shipbubble.com/v1/shipping/labels/categories",
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.SHIPBUBBLE_API_KEY}`,
+        },
+      }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery categories retrieved successfully",
+      data: response.data.data,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to retrieve delivery categories",
+      error: error?.response?.data || error.message,
+    });
+  }
+};
