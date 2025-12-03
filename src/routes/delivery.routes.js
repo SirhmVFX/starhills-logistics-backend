@@ -13,7 +13,7 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 router.post("/deliveries", authMiddleware, createDelivery);
-router.get("/deliveries/track", authMiddleware, trackDelivery); // Changed to query param
+router.get("/deliveries/track", trackDelivery); // Changed to query param
 router.post("/deliveries/:id/shipments", authMiddleware, createShipment);
 router.post("/deliveries/rates", authMiddleware, getShippingRates);
 router.get("/deliveries/:id", authMiddleware, getDeliveryDetails);
