@@ -6,7 +6,9 @@
   "main": "src/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "build": "esbuild src/server.js --outfile=dist/server.js --platform=node --format=esm --bundle",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +21,7 @@
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "dotenv": "^17.2.3",
     "esbuild": "^0.14.54",
     "express": "^5.1.0",
@@ -33,10 +36,15 @@
     "twilio": "^5.10.6"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "@types/jest": "^30.0.0",
     "@types/uuid": "^10.0.0",
     "eslint": "^9.39.1",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.11",
     "prettier": "^3.7.1",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
