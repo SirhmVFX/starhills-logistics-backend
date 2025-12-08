@@ -51,12 +51,6 @@ export const registerService = async (req, res) => {
       return res.status(400).json({ message: "Invalid phone number" });
     }
 
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({ message: "Password is not strong enough" });
-    }
-
     // Check if user with the same email or phone already exists
     const existingUserByEmail = await prisma.user.findUnique({
       where: { email },
