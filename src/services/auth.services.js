@@ -116,8 +116,8 @@ export const registerService = async (req, res) => {
     }
 
     // Generate access token and refresh token
-    const accessToken = signAccessToken(newUser); // Assuming you have a signAccessToken function
-    const refreshToken = signRefreshToken(newUser); // Assuming you have a signRefreshToken function
+    const accessToken = signAccessToken(newUser);
+    const refreshToken = signRefreshToken(newUser);
 
     // Optionally, store refresh token in the user's record
     await prisma.user.update({
