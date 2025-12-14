@@ -1,15 +1,13 @@
 import express from "express";
 import {
-  getWallet,
+  getWalletBalance,
   getWalletTransactions,
-  topupWallet,
-  walletWebhook,
+  requestFund,
 } from "../controllers/wallet.controller.js";
 const router = express.Router();
 
-router.post("/wallet/topup", topupWallet);
-router.post("/wallet/webhook", walletWebhook);
-router.get("/wallet", getWallet);
-router.get("/wallet/transactions", getWalletTransactions);
+router.post("/balance", getWalletBalance);
+router.post("/fund-request", requestFund);
+router.post("/transactions", getWalletTransactions);
 
 export default router;
