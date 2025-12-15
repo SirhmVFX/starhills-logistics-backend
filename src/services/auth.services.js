@@ -1,4 +1,5 @@
 import prisma from "../prismaClient.js";
+
 import bcrypt from "bcrypt";
 import {
   signAccessToken,
@@ -22,60 +23,62 @@ const cookieOptions = {
 
 export const registerService = async (req, res) => {
   try {
-    const { email, phone, password, fullName } = req.body;
+    const { email, phone, password, fullName, businessName, address } =
+      req.body;
 
     // Validate input fields
     if (!fullName) {
-      return res.status(400).json({ message: "Full name is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Full name is required" });
     }
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Invalid email" });
+      return res.status(400).json({ success: false, message: "Invalid email" });
     }
 
     if (!phone) {
-      return res.status(400).json({ message: "Phone number is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Phone number is required" });
     }
 
     if (!password) {
-      return res.status(400).json({ message: "Password is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Password is required" });
     }
 
     const phoneRegex = /^(?:\+?[1-9]\d{6,14}|0\d{9,14})$/;
     if (!phoneRegex.test(phone)) {
-      return res.status(400).json({ message: "Invalid phone number" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid phone number" });
     }
 
-    // Check if user with the same email or phone already exists
     const existingUserByEmail = await prisma.user.findUnique({
       where: { email },
     });
     if (existingUserByEmail) {
-      return res
-        .status(400)
-        .json({ message: "User with this email already exists" });
-    }
-
-    const existingUserByPhone = await prisma.user.findUnique({
-      where: { phone },
-    });
-    if (existingUserByPhone) {
-      return res
-        .status(400)
-        .json({ message: "User with this phone number already exists" });
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists",
+      });
     }
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Delete any existing OTP for this phone number
+    // Delete any existing OTP for this email
     await prisma.otp.deleteMany({
-      where: { phone },
+      where: { email },
     });
 
     // Create new OTP record in the database
@@ -112,7 +115,9 @@ export const registerService = async (req, res) => {
     // Send OTP to the user's phone
     const otpSent = await sendOtpEmail(newUser.email, newUser.fullName, otp);
     if (!otpSent) {
-      return res.status(500).json({ message: "Failed to send OTP" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to send OTP" });
     }
 
     // Generate access token and refresh token
@@ -130,6 +135,7 @@ export const registerService = async (req, res) => {
 
     // Return success response with user data and tokens
     return res.status(201).json({
+      success: true,
       message:
         "User created successfully and OTP sent to your phone. Please verify to complete registration.",
       user: newUser,
@@ -139,7 +145,8 @@ export const registerService = async (req, res) => {
   } catch (error) {
     console.error("Error during registration:", error);
     return res.status(500).json({
-      message: "Failed to register user",
+      success: false,
+      message: "Registration Failed",
       error: error?.message || "Unknown error",
     });
   }
@@ -197,19 +204,24 @@ export const verifyOtpService = async (req, res) => {
     const { email, otp } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "email is required" });
     }
 
     if (!otp) {
-      return res.status(400).json({ message: "OTP is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "OTP is required" });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ message: "No user found with this email number" });
+      return res.status(400).json({
+        success: false,
+        message: "No user found with this email number",
+      });
     }
 
     const otpEntry = await prisma.otp.findFirst({
@@ -217,13 +229,14 @@ export const verifyOtpService = async (req, res) => {
     });
 
     if (!otpEntry) {
-      return res.status(400).json({ message: "Invalid OTP" });
+      return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
     if (otpEntry.expiresAt < new Date()) {
-      return res
-        .status(400)
-        .json({ message: "OTP expired. Please request a new one." });
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired. Please request a new one.",
+      });
     }
 
     const updatedUser = await prisma.user.update({
@@ -256,6 +269,7 @@ export const verifyOtpService = async (req, res) => {
     });
 
     return res.status(200).json({
+      success: true,
       message: "Email verified successfully.",
       user: {
         id: updatedUser.id,
@@ -270,9 +284,11 @@ export const verifyOtpService = async (req, res) => {
       },
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Failed to verify OTP", error: error.message });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to verify OTP",
+      error: error.message,
+    });
   }
 };
 
@@ -281,23 +297,31 @@ export const loginService = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
 
     if (!password) {
-      return res.status(400).json({ message: "Password is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Password is required" });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return res.status(400).json({ message: "No user found with this email" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No user found with this email" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid password" });
     }
 
     const accessToken = signAccessToken({ id: user.id, email: user.email });
@@ -323,8 +347,14 @@ export const loginService = async (req, res) => {
     });
 
     return res.status(200).json({
+      success: true,
       message: "Login successful",
-      user: { id: user.id, email: user.email, fullName: user.fullName },
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        phone: user.phone,
+      },
       accessToken,
       refreshToken,
     });
@@ -332,6 +362,7 @@ export const loginService = async (req, res) => {
     console.error("Error during login:", error);
 
     return res.status(500).json({
+      success: false,
       message: "An error occurred during login",
       error: error.message,
     });
@@ -342,7 +373,9 @@ export const refreshTokenService = async (req, res) => {
   try {
     const token = req.cookies?.[REFRESH_COOKIE_NAME] || req.body.refreshToken;
     if (!token) {
-      return res.status(401).json({ message: "No refresh token found" });
+      return res
+        .status(401)
+        .json({ success: false, message: "No refresh token found" });
     }
 
     let payload;
@@ -350,20 +383,28 @@ export const refreshTokenService = async (req, res) => {
     try {
       payload = verifyRefreshToken(token);
     } catch (error) {
-      return res.status(401).json({ message: "Invalid refresh token" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid refresh token" });
     }
 
     const user = await prisma.user.findUnique({ where: { id: payload.id } });
     if (!user) {
-      return res.status(401).json({ message: "No user found with this id" });
+      return res
+        .status(401)
+        .json({ success: false, message: "No user found with this id" });
     }
 
     if (!user.refreshToken) {
-      return res.status(401).json({ message: "Session revoked" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Session revoked" });
     }
 
     if (user.refreshToken !== token) {
-      return res.status(401).json({ message: "Session revoked" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Session revoked" });
     }
     const accessToken = signAccessToken({
       id: user.id,
@@ -391,6 +432,7 @@ export const refreshTokenService = async (req, res) => {
     });
 
     return res.status(200).json({
+      success: true,
       message: "Refresh token successful",
       accessToken,
       refreshToken,
@@ -412,12 +454,16 @@ export const logoutService = async (req, res) => {
     try {
       payload = verifyRefreshToken(token);
     } catch (error) {
-      return res.status(401).json({ message: "Invalid refresh token" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid refresh token" });
     }
 
     const user = await prisma.user.findUnique({ where: { id: payload.id } });
     if (!user) {
-      return res.status(401).json({ message: "No user found with this id" });
+      return res
+        .status(401)
+        .json({ success: false, message: "No user found with this id" });
     }
 
     await prisma.user.update({
@@ -428,9 +474,11 @@ export const logoutService = async (req, res) => {
     res.clearCookie(ACCESS_COOKIE_NAME);
     res.clearCookie(REFRESH_COOKIE_NAME);
 
-    return res.status(200).json({ message: "Logout successful" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Logout successful" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -439,13 +487,17 @@ export const forgotPasswordService = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return res.status(400).json({ message: "No user found with this email" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No user found with this email" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -462,9 +514,10 @@ export const forgotPasswordService = async (req, res) => {
 
     await sendPasswordResetEmail(user.email, user.fullName, otp);
 
-    return res
-      .status(200)
-      .json({ message: "Password reset email sent successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Password reset email sent successfully",
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
@@ -517,32 +570,35 @@ export const resetPasswordService = async (req, res) => {
     const { email, password, confirmPassword } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
     }
 
     if (!password) {
-      return res.status(400).json({ message: "Password is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Password is required" });
     }
 
     if (!confirmPassword) {
-      return res.status(400).json({ message: "Confirm password is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Confirm password is required" });
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ message: "Passwords do not match" });
-    }
-
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({ message: "Invalid password" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      return res.status(400).json({ message: "No user found with this email" });
+      return res
+        .status(400)
+        .json({ success: false, message: "No user found with this email" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -552,9 +608,11 @@ export const resetPasswordService = async (req, res) => {
       data: { password: hashedPassword },
     });
 
-    return res.status(200).json({ message: "Password reset successfully" });
+    return res
+      .status(200)
+      .json({ success: true, message: "Password reset successfully" });
   } catch (error) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
