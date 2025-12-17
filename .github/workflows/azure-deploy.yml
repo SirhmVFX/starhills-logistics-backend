@@ -32,9 +32,8 @@ jobs:
         run: npm run build --if-present
         working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
-      - name: Zip application folder
-        working-directory: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        run: zip -r ../app.zip . -x '*.git*' -x '*.github*' -x '*.env*'
+      - name: Zip the application files
+        run: zip -r app.zip . -x '*.git*' -x '*.github*' -x '*.env*'
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
