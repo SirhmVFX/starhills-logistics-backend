@@ -1,5 +1,5 @@
 import prisma from "../prismaClient.js";
-import { makeShipbubbleRequest } from "./shipbubble.service";
+import { makeShipbubbleRequest } from "./shipbubble.service.js";
 
 export const createShipmentService = async (req, res) => {
   try {

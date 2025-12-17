@@ -1,5 +1,5 @@
 // src/services/shipbubble.service.js
-import { shipbubbleRequest } from "../utils/shipbubble";
+import { shipbubbleRequest } from "../utils/shipbubble.js";
 
 export const makeShipbubbleRequest = async (
   endpoint,
