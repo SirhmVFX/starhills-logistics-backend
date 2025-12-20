@@ -35,7 +35,7 @@ app.use("/api/v1/addresses", addressRoutes);
 app.use("/api/v1/rates", ratesRoutes);
 app.use("/api/v1/couriers", courierRoutes);
 app.use("/api/v1/packages", packageRoutes);
-app.use("/api/v1/shipment", shipmentRoutes);
+app.use("/api/v1/shipments", shipmentRoutes);
 app.use("/api/v1/tracking", trackingRoutes);
 app.use("/api/v1/returns", returnsRoutes);
 app.use("/api/v1/webhooks", webhooksRoutes);
