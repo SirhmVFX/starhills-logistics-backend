@@ -31,17 +31,17 @@ app.use(cookieParser());
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/wallet", walletRoutes);
-app.use("/api/addresses", addressRoutes);
-app.use("/api/rates", ratesRoutes);
-app.use("/api/couriers", courierRoutes);
-app.use("/api/packages", packageRoutes);
-app.use("/api/shipment", shipmentRoutes);
-app.use("/api/tracking", trackingRoutes);
-app.use("/api/returns", returnsRoutes);
-app.use("/api/webhooks", webhooksRoutes);
-app.use("/api/notifications", notificationsRoutes);
-app.use("/api/reports", reportsRoutes);
-app.use("/api/support", supportRoutes);
+app.use("/api/v1/addresses", addressRoutes);
+app.use("/api/v1/rates", ratesRoutes);
+app.use("/api/v1/couriers", courierRoutes);
+app.use("/api/v1/packages", packageRoutes);
+app.use("/api/v1/shipment", shipmentRoutes);
+app.use("/api/v1/tracking", trackingRoutes);
+app.use("/api/v1/returns", returnsRoutes);
+app.use("/api/v1/webhooks", webhooksRoutes);
+app.use("/api/v1/notifications", notificationsRoutes);
+app.use("/api/v1/reports", reportsRoutes);
+app.use("/api/v1/support", supportRoutes);
 
 app.use(
   "/api-docs",
