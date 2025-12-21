@@ -226,34 +226,36 @@ export const getShipmentStatisticsService = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    const query = { userId: req.user.id };
-    if (startDate && endDate) {
-      query.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
-      };
-    }
+    const where = {
+      userId: req.user.id,
+      ...(startDate &&
+        endDate && {
+          createdAt: {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          },
+        }),
+    };
 
-    const total = await prisma.shipment.countDocuments(query);
-    const delivered = await prisma.shipment.countDocuments({
-      ...query,
-      status: "delivered",
+    const total = await prisma.shipment.count({ where });
+    const delivered = await prisma.shipment.count({
+      where: { ...where, status: "delivered" },
     });
-    const inTransit = await prisma.shipment.countDocuments({
-      ...query,
-      status: "in_transit",
+    const inTransit = await prisma.shipment.count({
+      where: { ...where, status: "in_transit" },
     });
-    const cancelled = await prisma.shipment.countDocuments({
-      ...query,
-      status: "cancelled",
+    const cancelled = await prisma.shipment.count({
+      where: { ...where, status: "cancelled" },
     });
 
-    const revenueData = await prisma.shipment.aggregate([
-      { $match: query },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]);
+    const revenueData = await prisma.shipment.aggregate({
+      where,
+      _sum: {
+        amount: true,
+      },
+    });
 
-    const revenue = revenueData[0]?.total || 0;
+    const revenue = revenueData._sum.amount || 0;
 
     res.json({
       success: true,
@@ -267,6 +269,7 @@ export const getShipmentStatisticsService = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error in getShipmentStatisticsService:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch statistics",
