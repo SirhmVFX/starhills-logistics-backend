@@ -7,8 +7,7 @@ export const createShipmentService = async (req, res) => {
     const result = await makeShipbubbleRequest(
       "/shipping/labels",
       "POST",
-      req.body,
-      apiKey
+      req.body
     );
 
     if (!result.success) {
@@ -51,7 +50,7 @@ export const createShipmentService = async (req, res) => {
     });
 
     // Create notification
-    await Notification.create({
+    await prisma.notification.create({
       userId: req.user.id,
       type: "shipment_created",
       title: "Shipment Created",
@@ -78,18 +77,18 @@ export const createShipmentService = async (req, res) => {
 export const getShipmentsServices = async (req, res) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
-
-    const query = { userId: req.user.id };
-    if (status) query.status = status;
-
-    const shipments = await prisma.shipment
-      .find(query)
-      .sort({ createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit);
-
-    const total = await prisma.shipment.countDocuments(query);
-
+    const skip = (page - 1) * limit;
+    const where = { userId: req.user.id };
+    if (status) where.status = status;
+    const [shipments, total] = await Promise.all([
+      prisma.shipment.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: parseInt(limit),
+        skip: skip,
+      }),
+      prisma.shipment.count({ where }),
+    ]);
     res.json({
       success: true,
       shipments,
@@ -101,6 +100,7 @@ export const getShipmentsServices = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error in getShipmentsServices:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch shipments",
@@ -111,23 +111,24 @@ export const getShipmentsServices = async (req, res) => {
 
 export const getShipmentByIdService = async (req, res) => {
   try {
-    const shipment = await prisma.shipment.findOne({
-      _id: req.params.shipmentId,
-      userId: req.user.id,
+    const shipment = await prisma.shipment.findFirst({
+      where: {
+        id: req.params.shipmentId,
+        userId: req.user.id,
+      },
     });
-
     if (!shipment) {
       return res.status(404).json({
         success: false,
         message: "Shipment not found",
       });
     }
-
     res.json({
       success: true,
       shipment,
     });
   } catch (error) {
+    console.error("Error in getShipmentByIdService:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch shipment",
@@ -138,55 +139,60 @@ export const getShipmentByIdService = async (req, res) => {
 
 export const cancelShipmentService = async (req, res) => {
   try {
-    const shipment = await prisma.shipment.findOne({
-      _id: req.params.shipmentId,
-      userId: req.user.id,
+    const shipment = await prisma.shipment.findFirst({
+      where: {
+        id: req.params.shipmentId,
+        userId: req.user.id,
+      },
     });
-
     if (!shipment) {
       return res.status(404).json({
         success: false,
         message: "Shipment not found",
       });
     }
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
 
-    const user = await prisma.user.findById(req.user.id);
     const apiKey = decryptData(user.shipbubbleApiKey);
-
     const result = await makeShipbubbleRequest(
       `/shipping/labels/${shipment.shipbubbleId}/cancel`,
       "POST",
       { reason: req.body.reason },
       apiKey
     );
-
     if (!result.success) {
       return res.status(400).json({
         success: false,
         message: result.error,
       });
     }
-
-    shipment.status = "cancelled";
-    shipment.cancellationReason = req.body.reason;
-    shipment.cancelledAt = new Date();
-    await shipment.save();
-
-    // Create notification
-    await Notification.create({
-      userId: req.user.id,
-      type: "shipment_cancelled",
-      title: "Shipment Cancelled",
-      message: `Shipment ${shipment.trackingNumber} has been cancelled`,
-      data: { shipmentId: shipment._id },
+    const updatedShipment = await prisma.shipment.update({
+      where: { id: shipment.id },
+      data: {
+        status: "cancelled",
+        cancellationReason: req.body.reason,
+        cancelledAt: new Date(),
+      },
     });
-
+    // Create notification
+    await prisma.notification.create({
+      data: {
+        userId: req.user.id,
+        type: "shipment_cancelled",
+        title: "Shipment Cancelled",
+        message: `Shipment ${shipment.trackingNumber} has been cancelled`,
+        data: { shipmentId: shipment.id },
+      },
+    });
     res.json({
       success: true,
       message: "Shipment cancelled successfully",
-      shipment,
+      shipment: updatedShipment,
     });
   } catch (error) {
+    console.error("Error in cancelShipmentService:", error);
     res.status(500).json({
       success: false,
       message: "Failed to cancel shipment",
@@ -197,23 +203,27 @@ export const cancelShipmentService = async (req, res) => {
 
 export const getShipmentWaybillService = async (req, res) => {
   try {
-    const shipment = await prisma.shipment.findOne({
-      _id: req.params.shipmentId,
-      userId: req.user.id,
+    const shipment = await prisma.shipment.findFirst({
+      where: {
+        id: req.params.shipmentId,
+        userId: req.user.id,
+      },
+      select: {
+        waybillUrl: true,
+      },
     });
-
     if (!shipment) {
       return res.status(404).json({
         success: false,
         message: "Shipment not found",
       });
     }
-
     res.json({
       success: true,
       waybillUrl: shipment.waybillUrl,
     });
   } catch (error) {
+    console.error("Error in getShipmentWaybillService:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch waybill",
