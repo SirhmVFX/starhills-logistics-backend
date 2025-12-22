@@ -6,15 +6,27 @@ export const authMiddleware = (req, res, next) => {
     ? authHeader.split(" ")[1]
     : req.cookies?.access_token;
 
-  if (!accessToken) return res.status(401).json({ message: "No access token" });
+  if (!accessToken)
+    return res.status(401).json({ success: false, message: "No access token" });
 
   try {
     const payload = verifyAccessToken(accessToken);
+    if (!payload?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token payload",
+      });
+    }
     req.user = {
-      ...payload,
+      id: payload.id, // Ensure id is set
+      email: payload.email,
     };
     return next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid or expired access token" });
+    console.error("Token verification error:", err);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token",
+    });
   }
 };

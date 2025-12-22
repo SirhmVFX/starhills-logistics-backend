@@ -11,8 +11,8 @@ const router = express.Router();
 
 router.post("/validate", validateAddress);
 router.get("/", getAddresses);
-router.get("/:addressId", getAddressById);
 router.post("/", createAddress);
+router.get("/:addressId", getAddressById);
 router.put("/:addressId", updateAddress);
 router.delete("/:addressId", deleteAddress);
 

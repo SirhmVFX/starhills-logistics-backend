@@ -8,8 +8,8 @@ import {
 
 const router = express.Router();
 
-router.get("/:trackingNumber", trackShipment);
 router.post("/multiple", trackMultipleShipments);
+router.get("/:trackingNumber", trackShipment);
 router.get("/:trackingNumber/events", getTrackingEvents);
 
 export default router;

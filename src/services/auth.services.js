@@ -334,14 +334,14 @@ export const loginService = async (req, res) => {
 
     res.cookie(ACCESS_COOKIE_NAME, accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
     });
 
     res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
       ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
     });

@@ -234,7 +234,9 @@ export const getShipmentWaybillService = async (req, res) => {
 
 export const getShipmentStatisticsService = async (req, res) => {
   try {
+    console.log("User ID:", req.user?.id); // Debug log
     const { startDate, endDate } = req.query;
+    console.log("Query params:", { startDate, endDate }); // Debug log
 
     const where = {
       userId: req.user.id,
@@ -247,23 +249,27 @@ export const getShipmentStatisticsService = async (req, res) => {
         }),
     };
 
-    const total = await prisma.shipment.count({ where });
-    const delivered = await prisma.shipment.count({
-      where: { ...where, status: "delivered" },
-    });
-    const inTransit = await prisma.shipment.count({
-      where: { ...where, status: "in_transit" },
-    });
-    const cancelled = await prisma.shipment.count({
-      where: { ...where, status: "cancelled" },
-    });
+    console.log("Final query:", JSON.stringify(where, null, 2)); // Debug log
 
-    const revenueData = await prisma.shipment.aggregate({
-      where,
-      _sum: {
-        amount: true,
-      },
-    });
+    const [total, delivered, inTransit, cancelled, revenueData] =
+      await Promise.all([
+        prisma.shipment.count({ where }),
+        prisma.shipment.count({ where: { ...where, status: "delivered" } }),
+        prisma.shipment.count({ where: { ...where, status: "in_transit" } }),
+        prisma.shipment.count({ where: { ...where, status: "cancelled" } }),
+        prisma.shipment.aggregate({
+          where,
+          _sum: { amount: true },
+        }),
+      ]);
+
+    console.log("Query results:", {
+      total,
+      delivered,
+      inTransit,
+      cancelled,
+      revenueData,
+    }); // Debug log
 
     const revenue = revenueData._sum.amount || 0;
 
