@@ -1218,21 +1218,21 @@ export default {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["address", "city", "state", "country"],
+                required: ["name", "email", "phone", "address"],
                 properties: {
-                  address: {
+                  name: {
                     type: "string",
                     example: "123 Main Street",
                   },
-                  city: {
+                  email: {
                     type: "string",
                     example: "Lagos",
                   },
-                  state: {
+                  phone: {
                     type: "string",
                     example: "Lagos",
                   },
-                  country: {
+                  address: {
                     type: "string",
                     example: "Nigeria",
                   },
