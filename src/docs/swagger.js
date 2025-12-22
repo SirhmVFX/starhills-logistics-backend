@@ -1018,6 +1018,122 @@ export default {
         },
       },
     },
+    "/wallet/webhook/funding": {
+      post: {
+        tags: ["Wallet"],
+        summary: "Handle funding webhook notifications",
+        description:
+          "This endpoint processes payment webhook notifications from the payment provider. It updates the wallet balance and transaction status based on the payment status.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["reference", "status", "amount"],
+                properties: {
+                  reference: {
+                    type: "string",
+                    description: "Unique reference for the transaction",
+                    example: "FUND-1703262000000-abc12345",
+                  },
+                  status: {
+                    type: "string",
+                    enum: ["successful", "failed"],
+                    description: "Status of the payment",
+                  },
+                  amount: {
+                    type: "number",
+                    description: "Amount that was funded",
+                    example: 10000,
+                  },
+                  metadata: {
+                    type: "object",
+                    description: "Additional payment metadata",
+                    properties: {
+                      payment_method: {
+                        type: "string",
+                        example: "card",
+                      },
+                      payment_reference: {
+                        type: "string",
+                        example: "PAY-xyz789",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: "Webhook processed successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: {
+                      type: "boolean",
+                      example: true,
+                    },
+                    message: {
+                      type: "string",
+                      example: "Wallet funded successfully",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid request or transaction not found",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: {
+                      type: "boolean",
+                      example: false,
+                    },
+                    message: {
+                      type: "string",
+                      example: "Transaction not found",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          500: {
+            description: "Server error",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: {
+                      type: "boolean",
+                      example: false,
+                    },
+                    message: {
+                      type: "string",
+                      example: "Error processing webhook",
+                    },
+                    error: {
+                      type: "string",
+                      example: "Detailed error message",
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     "/wallet/transactions": {
       get: {
         tags: ["Wallet"],
