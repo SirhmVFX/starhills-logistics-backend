@@ -6,12 +6,13 @@ import {
   markAllAsRead,
   markAsRead,
 } from "../controllers/notifications.controller.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", getNotifications);
-router.put("/read-all", markAllAsRead);
-router.put("/:notificationId/read", markAsRead);
-router.delete("/:notificationId", deleteNotification);
+router.get("/", authMiddleware, getNotifications);
+router.put("/read-all", authMiddleware, markAllAsRead);
+router.put("/:notificationId/read", authMiddleware, markAsRead);
+router.delete("/:notificationId", authMiddleware, deleteNotification);
 
 export default router;
