@@ -3,16 +3,12 @@ import prisma from "../prismaClient.js";
 import { makeShipbubbleRequest } from "./shipbubble.service.js";
 export const validateAddressService = async (req, res) => {
   try {
-    const { address, city, state, country } = req.body;
-
-    const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
     const result = await makeShipbubbleRequest(
       "/shipping/address/validate",
       "POST",
-      { address, city, state, country },
-      apiKey
+      req.body
     );
 
     if (!result.success) {
@@ -39,14 +35,18 @@ export const validateAddressService = async (req, res) => {
 
 export const getAddressesService = async (req, res) => {
   try {
-    const addresses = await prisma.address.find({
-      userId: req.user.id,
-      isDeleted: false,
+    const addresses = await prisma.address.findFirst({
+      where: {
+        userId: req.user.id,
+        isDeleted: false,
+      },
     });
+
+    const result = await makeShipbubbleRequest("/shipping/address", "GET");
 
     res.json({
       success: true,
-      addresses,
+      addresses: result.data?.data,
     });
   } catch (error) {
     res.status(500).json({

@@ -58,10 +58,10 @@ import crypto from "crypto";
 //   }
 // };
 
-export const getUserService = async (userId) => {
+export const getUserService = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: req.user.id },
       include: { profile: true, wallet: true, bankAccount: true },
     });
 

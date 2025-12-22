@@ -3,14 +3,17 @@ import { makeShipbubbleRequest } from "./shipbubble.service.js";
 
 export const getPackageCategoriesService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
-
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
     const result = await makeShipbubbleRequest(
-      "/shipping/categories",
+      "/shipping/labels/categories",
       "GET",
-      null,
-      apiKey
+      null
     );
 
     if (!result.success) {
@@ -22,7 +25,7 @@ export const getPackageCategoriesService = async (req, res) => {
 
     res.json({
       success: true,
-      categories: result.data.categories || [],
+      categories: result.data?.data,
     });
   } catch (error) {
     res.status(500).json({
@@ -35,14 +38,12 @@ export const getPackageCategoriesService = async (req, res) => {
 
 export const getPackageDimensionsService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
     const result = await makeShipbubbleRequest(
-      "/shipping/dimensions",
+      "/shipping/labels/boxes",
       "GET",
-      null,
-      apiKey
+      null
     );
 
     if (!result.success) {
@@ -54,7 +55,7 @@ export const getPackageDimensionsService = async (req, res) => {
 
     res.json({
       success: true,
-      dimensions: result.data.dimensions || [],
+      dimensions: result.data?.data,
     });
   } catch (error) {
     res.status(500).json({
@@ -68,13 +69,11 @@ export const getPackageDimensionsService = async (req, res) => {
 export const getInsuranceRatesService = async (req, res) => {
   try {
     const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
 
     const result = await makeShipbubbleRequest(
-      "/shipping/insurance/rates",
+      "/shipping/insurance_rates",
       "POST",
-      req.body,
-      apiKey
+      req.body
     );
 
     if (!result.success) {
@@ -89,6 +88,7 @@ export const getInsuranceRatesService = async (req, res) => {
       insuranceCode: result.data.insurance_code,
       premium: result.data.premium,
       coverage: result.data.coverage,
+      result: result.data,
     });
   } catch (error) {
     res.status(500).json({
@@ -102,13 +102,11 @@ export const getInsuranceRatesService = async (req, res) => {
 export const validateCashonDeliveryService = async (req, res) => {
   try {
     const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
 
     const result = await makeShipbubbleRequest(
       "/shipping/cod/validate",
       "POST",
-      req.body,
-      apiKey
+      req.body
     );
 
     if (!result.success) {

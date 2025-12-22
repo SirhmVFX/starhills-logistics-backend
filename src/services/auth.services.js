@@ -689,6 +689,9 @@ export const devResetUserService = async (req, res) => {
       where: { userId: user.id },
     });
 
+    await prisma.delivery.deleteMany({
+      where: { senderId: user.id },
+    });
     await prisma.walletTransaction
       ?.deleteMany({
         where: { userId: user.id },
