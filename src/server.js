@@ -29,7 +29,7 @@ app.use(cors());
 app.use(cookieParser());
 
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/wallet", walletRoutes);
 app.use("/api/v1/addresses", addressRoutes);
 app.use("/api/v1/rates", ratesRoutes);

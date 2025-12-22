@@ -11,8 +11,7 @@ const handleResponse = (res, status, message, data) => {
 
 export const getUser = async (req, res) => {
   try {
-    const user = await getUserService(req.user.id);
-    handleResponse(res, 200, "User fetched successfully", user);
+    await getUserService(req, res);
   } catch (error) {
     handleResponse(res, 500, error.message, null);
   }
