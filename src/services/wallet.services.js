@@ -78,14 +78,14 @@ export const requestFundService = async (req, res) => {
       { amount: parseFloat(amount) }
     );
 
-    if (!result.success || !result.data?.payment_url) {
+    if (!result.success) {
       console.error(
         "Shipbubble funding error:",
         result.error || "No payment URL received"
       );
       return res.status(400).json({
         success: false,
-        message: result.error || "Failed to create funding request",
+        message: result,
       });
     }
 
@@ -111,6 +111,7 @@ export const requestFundService = async (req, res) => {
         payment_url: result.data.payment_url,
         transaction_id: transaction.id,
       },
+      data: result,
     });
   } catch (error) {
     console.error("Error in requestFundService:", error);
