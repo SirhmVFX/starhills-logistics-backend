@@ -68,18 +68,24 @@ export const getPackageDimensionsService = async (req, res) => {
 
 export const getInsuranceRatesService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
+    const { request_token } = req.body;
+
+    if (!request_token) {
+      return res.status(400).json({
+        success: false,
+        message: "Request token is required",
+      });
+    }
 
     const result = await makeShipbubbleRequest(
-      "/shipping/insurance_rates",
-      "POST",
-      req.body
+      `/shipping/insurance_rates?request_token=${request_token}`,
+      "GET"
     );
 
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: result.error,
+        message: result,
       });
     }
 
@@ -88,7 +94,7 @@ export const getInsuranceRatesService = async (req, res) => {
       insuranceCode: result.data.insurance_code,
       premium: result.data.premium,
       coverage: result.data.coverage,
-      result: result.data,
+      result: result.data?.data,
     });
   } catch (error) {
     res.status(500).json({
