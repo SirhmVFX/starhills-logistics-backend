@@ -3,6 +3,13 @@ import { makeShipbubbleRequest } from "./shipbubble.service.js";
 
 export const createShipmentService = async (req, res) => {
   try {
+    // First, verify we have the required request_token
+    if (!req.body.request_token) {
+      return res.status(400).json({
+        success: false,
+        message: "Request token is required. Please calculate rates first.",
+      });
+    }
     // Create shipment via Shipbubble API
     const result = await makeShipbubbleRequest(
       "/shipping/labels",
@@ -13,12 +20,14 @@ export const createShipmentService = async (req, res) => {
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: result.error,
+        message: result,
       });
     }
 
     // Save shipment to database
     const shipment = await prisma.shipment.create({
+      courierServiceCode: req.body.service_code,
+      requestToken: result.request_token,
       userId: req.user.id,
       trackingNumber: result.data.tracking_number,
       shipbubbleId: result.data.id,
