@@ -1576,63 +1576,105 @@ export default {
               schema: {
                 type: "object",
                 required: [
-                  "sender_address",
-                  "sender_city",
-                  "sender_state",
-                  "sender_country",
-                  "receiver_address",
-                  "receiver_city",
-                  "receiver_state",
-                  "receiver_country",
-                  "weight",
-                  "dimension",
-                  "category",
+                  "sender_address_code",
+                  "receiver_address_code",
+                  "pickup_date",
+                  "category_id",
+                  "package_items",
+                  "package_dimension",
                 ],
                 properties: {
-                  sender_address: {
-                    type: "string",
-                    example: "123 Sender Street",
+                  sender_address_code: {
+                    type: "integer",
+                    example: 445104399,
+                    description: "Shipbubble address code for the sender",
                   },
-                  sender_city: {
-                    type: "string",
-                    example: "Lagos",
+                  receiver_address_code: {
+                    type: "integer",
+                    example: 938461645,
+                    description: "Shipbubble address code for the receiver",
                   },
-                  sender_state: {
+                  pickup_date: {
                     type: "string",
-                    example: "Lagos",
+                    format: "date",
+                    example: "2025-12-23",
+                    description: "Scheduled pickup date in YYYY-MM-DD format",
                   },
-                  sender_country: {
+                  category_id: {
+                    type: "integer",
+                    example: 98190590,
+                    description: "Category ID for the package",
+                  },
+                  service_type: {
                     type: "string",
-                    example: "Nigeria",
+                    example: "pickup",
+                    enum: ["pickup", "delivery"],
+                    description: "Type of service requested",
                   },
-                  receiver_address: {
+                  delivery_instructions: {
                     type: "string",
-                    example: "456 Receiver Avenue",
+                    example: "Handle with care",
+                    description: "Special instructions for delivery",
                   },
-                  receiver_city: {
-                    type: "string",
-                    example: "Abuja",
+                  package_items: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      required: [
+                        "name",
+                        "description",
+                        "unit_weight",
+                        "unit_amount",
+                        "quantity",
+                      ],
+                      properties: {
+                        name: {
+                          type: "string",
+                          example: "Test Package",
+                        },
+                        description: {
+                          type: "string",
+                          example: "Test shipment",
+                        },
+                        unit_weight: {
+                          type: "string",
+                          example: "0.002",
+                          description: "Weight per unit in kg",
+                        },
+                        unit_amount: {
+                          type: "string",
+                          example: "25000.00",
+                          description:
+                            "Value per unit in the smallest currency unit (kobo for NGN)",
+                        },
+                        quantity: {
+                          type: "string",
+                          example: "2",
+                          description: "Number of units",
+                        },
+                      },
+                    },
                   },
-                  receiver_state: {
-                    type: "string",
-                    example: "FCT",
-                  },
-                  receiver_country: {
-                    type: "string",
-                    example: "Nigeria",
-                  },
-                  weight: {
-                    type: "number",
-                    example: 2.5,
-                    description: "Weight in kg",
-                  },
-                  dimension: {
-                    type: "string",
-                    example: "small",
-                  },
-                  category: {
-                    type: "string",
-                    example: "electronics",
+                  package_dimension: {
+                    type: "object",
+                    required: ["length", "width", "height"],
+                    properties: {
+                      length: {
+                        type: "number",
+                        example: 32,
+                        description: "Length in cm",
+                      },
+                      width: {
+                        type: "number",
+                        example: 34,
+                        description: "Width in cm",
+                      },
+                      height: {
+                        type: "number",
+                        example: 34,
+                        description: "Height in cm",
+                      },
+                    },
                   },
                 },
               },
@@ -1651,25 +1693,75 @@ export default {
                       type: "boolean",
                       example: true,
                     },
-                    rates: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          courier: {
-                            type: "string",
-                            example: "DHL",
-                          },
-                          price: {
-                            type: "number",
-                            example: 5000,
-                          },
-                          estimatedDays: {
-                            type: "integer",
-                            example: 3,
+                    data: {
+                      type: "object",
+                      properties: {
+                        request_token: {
+                          type: "string",
+                          description: "Token for this rate request",
+                        },
+                        couriers: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              courier: {
+                                type: "string",
+                                example: "DHL",
+                              },
+                              price: {
+                                type: "number",
+                                example: 5000,
+                              },
+                              estimated_delivery: {
+                                type: "string",
+                                example: "2-3 business days",
+                              },
+                            },
                           },
                         },
                       },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Invalid input or missing required fields",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: {
+                      type: "boolean",
+                      example: false,
+                    },
+                    message: {
+                      type: "string",
+                      example:
+                        "Missing required fields: sender_address_code, receiver_address_code",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          500: {
+            description: "Internal server error",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: {
+                      type: "boolean",
+                      example: false,
+                    },
+                    message: {
+                      type: "string",
+                      example: "Failed to calculate rates",
                     },
                   },
                 },
@@ -1972,8 +2064,8 @@ export default {
         },
       },
     },
-    "/insurance/rates": {
-      post: {
+    "packages/insurance-rates": {
+      get: {
         tags: ["Insurance"],
         summary: "Get insurance rates",
         security: [
@@ -1987,15 +2079,11 @@ export default {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["itemValue", "courierCode"],
+                required: ["request_token"],
                 properties: {
-                  itemValue: {
-                    type: "number",
-                    example: 50000,
-                  },
-                  courierCode: {
+                  request_token: {
                     type: "string",
-                    example: "dhl",
+                    example: "asYeshesolcjaUKI:si",
                   },
                 },
               },
@@ -2107,6 +2195,8 @@ export default {
               schema: {
                 type: "object",
                 required: [
+                  "request_token",
+                  "service_code",
                   "sender_name",
                   "sender_phone",
                   "sender_email",
@@ -2125,8 +2215,23 @@ export default {
                   "weight",
                   "dimension",
                   "category",
+                  "items",
+                  "cod_amount",
+                  "insurance_code",
                 ],
                 properties: {
+                  request_token: {
+                    type: "string",
+                    description:
+                      "Token obtained from the rates calculation endpoint",
+                    example:
+                      "bd7ccea8cf57e3e66d4266861af32a1136a7bf0c0100e836644e30d284eab198",
+                  },
+                  service_code: {
+                    type: "string",
+                    description: "Code of the selected courier service",
+                    example: "kwik",
+                  },
                   sender_name: {
                     type: "string",
                     example: "John Doe",
@@ -2137,6 +2242,7 @@ export default {
                   },
                   sender_email: {
                     type: "string",
+                    format: "email",
                     example: "sender@example.com",
                   },
                   sender_address: {
@@ -2165,6 +2271,7 @@ export default {
                   },
                   receiver_email: {
                     type: "string",
+                    format: "email",
                     example: "receiver@example.com",
                   },
                   receiver_address: {
@@ -2185,47 +2292,64 @@ export default {
                   },
                   courier_id: {
                     type: "string",
-                    example: "courier_123",
+                    example: "kwik",
+                    description: "ID of the selected courier service",
                   },
                   weight: {
                     type: "number",
                     example: 2.5,
+                    description: "Weight in kg",
                   },
                   dimension: {
                     type: "string",
                     example: "small",
+                    enum: ["small", "medium", "large"],
+                    description: "Size category of the package",
                   },
                   category: {
                     type: "string",
                     example: "electronics",
+                    description: "Category of the item being shipped",
                   },
                   description: {
                     type: "string",
                     example: "Laptop computer",
+                    description: "Description of the shipment",
                   },
                   items: {
                     type: "array",
+                    minItems: 1,
                     items: {
                       type: "object",
+                      required: ["name", "quantity", "price"],
                       properties: {
                         name: {
                           type: "string",
+                          example: "Laptop",
                         },
                         quantity: {
                           type: "integer",
+                          minimum: 1,
+                          example: 1,
                         },
                         price: {
                           type: "number",
+                          minimum: 0,
+                          example: 150,
                         },
                       },
                     },
                   },
                   cod_amount: {
                     type: "number",
-                    example: 50000,
+                    minimum: 0,
+                    example: 150,
+                    description: "Cash on Delivery amount in NGN",
                   },
                   insurance_code: {
                     type: "string",
+                    example: "GIT-retail-x0",
+                    description: "Insurance code for the shipment",
                   },
                 },
               },
@@ -2257,6 +2381,52 @@ export default {
                     },
                     waybillUrl: {
                       type: "string",
+                      format: "url",
+                      example: "https://api.shipbubble.com/waybills/ABC123.pdf",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: "Bad Request - Missing or invalid parameters",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: {
+                      type: "boolean",
+                      example: false,
+                    },
+                    message: {
+                      type: "string",
+                      example: "Request token is required",
+                    },
+                  },
+                },
+              },
+            },
+          },
+          500: {
+            description: "Internal Server Error",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: {
+                      type: "boolean",
+                      example: false,
+                    },
+                    message: {
+                      type: "string",
+                      example: "Failed to create shipment",
+                    },
+                    error: {
+                      type: "string",
+                      example: "Error details here",
                     },
                   },
                 },
