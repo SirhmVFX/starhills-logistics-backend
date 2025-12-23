@@ -1,4 +1,5 @@
 import prisma from "../prismaClient.js";
+import bcrypt from "bcrypt";
 
 import crypto from "crypto";
 
@@ -116,7 +117,10 @@ export const chnagePasswordService = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    const user = await prisma.user.findById(req.user.id).select("+password");
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { password: true },
+    });
 
     // Verify current password
     const isValid = await bcrypt.compare(currentPassword, user.password);
@@ -147,9 +151,9 @@ export const chnagePasswordService = async (req, res) => {
 
 export const deleteAccountService = async (req, res) => {
   try {
-    await prisma.user.findByIdAndUpdate(req.user.id, {
-      isActive: false,
-      deletedAt: new Date(),
+    await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { isActive: true, deletedAt: true },
     });
 
     res.json({

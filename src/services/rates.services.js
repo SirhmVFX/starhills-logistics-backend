@@ -121,14 +121,10 @@ export const calculateRateServices = async (req, res) => {
 
 export const calculateSelectedCouriersService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
-
     const result = await makeShipbubbleRequest(
       "/shipping/fetch_rates/selected",
       "POST",
-      req.body,
-      apiKey
+      req.body
     );
 
     if (!result.success) {
@@ -140,7 +136,7 @@ export const calculateSelectedCouriersService = async (req, res) => {
 
     res.json({
       success: true,
-      rates: result.data.rates || [],
+      rates: result,
     });
   } catch (error) {
     res.status(500).json({
@@ -153,26 +149,22 @@ export const calculateSelectedCouriersService = async (req, res) => {
 
 export const updateRateRequestService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
-
     const result = await makeShipbubbleRequest(
       `/shipping/fetch_rates/${req.params.requestToken}`,
       "PUT",
-      req.body,
-      apiKey
+      req.body
     );
 
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: result.error,
+        message: result,
       });
     }
 
     res.json({
       success: true,
-      data: result.data,
+      result: result,
     });
   } catch (error) {
     res.status(500).json({

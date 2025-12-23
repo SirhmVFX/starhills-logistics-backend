@@ -3,14 +3,16 @@ import { makeShipbubbleRequest } from "./shipbubble.service.js";
 
 export const getCouriersService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.user.id,
+      },
+    });
 
     const result = await makeShipbubbleRequest(
       "/shipping/couriers",
       "GET",
-      null,
-      apiKey
+      null
     );
 
     if (!result.success) {
@@ -35,14 +37,16 @@ export const getCouriersService = async (req, res) => {
 
 export const getCouriersByIdService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
-    const apiKey = decryptData(user.shipbubbleApiKey);
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.user.id,
+      },
+    });
 
     const result = await makeShipbubbleRequest(
       `/shipping/couriers/${req.params.courierId}`,
       "GET",
-      null,
-      apiKey
+      null
     );
 
     if (!result.success) {

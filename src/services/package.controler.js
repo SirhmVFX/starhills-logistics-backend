@@ -107,8 +107,6 @@ export const getInsuranceRatesService = async (req, res) => {
 
 export const validateCashonDeliveryService = async (req, res) => {
   try {
-    const user = await prisma.user.findById(req.user.id);
-
     const result = await makeShipbubbleRequest(
       "/shipping/cod/validate",
       "POST",
@@ -118,7 +116,7 @@ export const validateCashonDeliveryService = async (req, res) => {
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: result.error,
+        message: result,
       });
     }
 
@@ -126,6 +124,7 @@ export const validateCashonDeliveryService = async (req, res) => {
       success: true,
       available: result.data.available,
       fee: result.data.fee,
+      result: result,
     });
   } catch (error) {
     res.status(500).json({
