@@ -6,7 +6,7 @@ export const calculateRateServices = async (req, res) => {
     // Validate required fields
     const requiredFields = [
       "sender_address_code",
-      "receiver_address_code",
+      "reciever_address_code",
       "pickup_date",
       "category_id",
       "package_items",
@@ -83,13 +83,7 @@ export const calculateRateServices = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        request_token: result.data?.request_token,
-        couriers: result.data?.couriers || [],
-        fastest_courier: result.data?.fastest_courier,
-        cheapest_courier: result.data?.cheapest_courier,
-        checkout_data: result.data?.checkout_data,
-      },
+      data: result.data,
     });
   } catch (error) {
     console.error("Error in calculateRateServices:", error);
