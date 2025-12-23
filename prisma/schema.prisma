@@ -300,6 +300,7 @@ model Shipment {
   senderCity        String
   senderState       String
   senderCountry     String
+  courierServiceCode String?
   receiverName      String
   receiverPhone     String
   receiverEmail     String?
@@ -308,6 +309,7 @@ model Shipment {
   receiverState     String
   receiverCountry   String
   courierId         String?
+  requestToken      String?
   weight            Float?
   dimension         String?
   category          String?
