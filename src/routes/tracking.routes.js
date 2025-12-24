@@ -5,11 +5,12 @@ import {
   trackMultipleShipments,
   trackShipment,
 } from "../controllers/tracking.controller.js";
+import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/multiple", trackMultipleShipments);
-router.get("/:trackingNumber", trackShipment);
-router.get("/:trackingNumber/events", getTrackingEvents);
+router.post("/multiple", authMiddleware, trackMultipleShipments);
+router.get("/:trackingNumber", authMiddleware, trackShipment);
+router.get("/:trackingNumber/events", authMiddleware, getTrackingEvents);
 
 export default router;
