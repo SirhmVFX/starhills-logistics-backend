@@ -2197,6 +2197,7 @@ export default {
                 required: [
                   "request_token",
                   "service_code",
+                  "amount",
                   "sender_name",
                   "sender_phone",
                   "sender_email",
