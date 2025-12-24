@@ -288,53 +288,79 @@ model Notification {
 }
 
 model Shipment {
-  id                String   @id @default(uuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id])
-  trackingNumber    String   @unique
-  shipbubbleId      String?
-  senderName        String
-  senderPhone       String
-  senderEmail       String?
-  senderAddress     String
-  senderCity        String
-  senderState       String
-  senderCountry     String
-  courierServiceCode String?
-  receiverName      String
-  receiverPhone     String
-  receiverEmail     String?
-  receiverAddress   String
-  receiverCity      String
-  receiverState     String
-  receiverCountry   String
-  courierId         String?
-  requestToken      String?
-  weight            Float?
-  dimension         String?
-  category          String?
-  description       String?
-  items             Json?     // Array of items
-  codAmount         Float?
-  insuranceCode     String?
-  status            String    // e.g., 'created', 'in_transit', 'delivered'
-  currentLocation   String?
-  estimatedDelivery DateTime?
-  waybillUrl        String?
-  amount            Float
-  cancellationReason String?
-  cancelledAt       DateTime?
-  deliveredAt       DateTime?
-  lastUpdated       DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                  String    @id @default(uuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id])
+  trackingNumber      String    @unique
+  shipbubbleId        String?
+  trackingUrl         String?
+  
+  // Sender Information
+  senderName          String
+  senderPhone         String
+  senderEmail         String?
+  senderAddress       String
+  senderCity          String
+  senderState         String
+  senderCountry       String
+  senderCoordinates   String?   @db.Text // JSON string of {latitude: number, longitude: number}
+  
+  // Receiver Information
+  receiverName        String
+  receiverPhone       String
+  receiverEmail       String?
+  receiverAddress     String
+  receiverCity        String
+  receiverState       String
+  receiverCountry     String
+  receiverCoordinates String?   @db.Text // JSON string of {latitude: number, longitude: number}
+  
+  // Shipment Details
+  courierServiceCode  String?
+  courierId           String?
+  requestToken        String?
+  weight              Float?
+  dimension           String?
+  category            String?
+  description         String?
+  items               Json?     // Array of items
+  codAmount           Float?
+  insuranceCode       String?
+  
+  // Status Tracking
+  status              String    // e.g., 'created', 'pending', 'in_transit', 'delivered', 'cancelled'
+  currentLocation     String?
+  estimatedDelivery   DateTime?
+  waybillUrl          String?
+  amount              Float
+  
+  // Cancellation
+  cancellationReason  String?
+  cancelledAt         DateTime?
+  
+  // Delivery
+  deliveredAt         DateTime?
+  
+  // Additional Info
+  courierInfo         String?   @db.Text // JSON string from Shipbubble
+  paymentInfo         String?   @db.Text // JSON string from Shipbubble
+  dateCreated         DateTime?
+  lastUpdated         DateTime?
+  
+  // Timestamps
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
   
   // Relations
-  returns           Return[]  @relation("ShipmentReturns")
+  returns             Return[]  @relation("ShipmentReturns")
 
-  @@index([userId, status])
+  @@index([userId])
+  @@index([status])
   @@index([trackingNumber])
+  @@index([shipbubbleId])
+  @@index([createdAt])
 }
+
 
 model Return {
   id                String   @id @default(uuid())
