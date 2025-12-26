@@ -20,6 +20,7 @@ export const validateAddressService = async (req, res) => {
 
     res.json({
       success: true,
+      result: result,
       valid: result.data.valid,
       validatedAddress: result.data.validated_address,
       coordinates: result.data.coordinates,
