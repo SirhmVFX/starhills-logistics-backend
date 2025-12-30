@@ -104,26 +104,30 @@ export const createShipmentService = async (req, res) => {
         data: {
           courierServiceCode: req.body.service_code,
           requestToken: req.body.request_token,
-          trackingNumber,
-          shipbubbleId: order_id,
-          trackingUrl: tracking_url,
+          trackingNumber: result.data.data.order_id,
+          shipbubbleId: result.data.data.order_id,
+          trackingUrl: result.data.data.tracking_url,
           user: { connect: { id: req.user.id } },
 
           // Sender info (prioritize Shipbubble response)
-          senderName: ship_from?.name || req.body.sender_name,
-          senderPhone: ship_from?.phone || req.body.sender_phone,
-          senderEmail: ship_from?.email || req.body.sender_email,
-          senderAddress: ship_from?.address || req.body.sender_address,
+          senderName: result.data.data.ship_from?.name,
+          senderPhone: result.data.data.ship_from?.phone,
+          senderEmail: result.data.data.ship_from?.email,
+          senderAddress: result.data.data.ship_from?.address,
           senderCity: req.body.sender_city,
           senderState: req.body.sender_state,
           senderCountry: req.body.sender_country,
           senderCoordinates: senderCoordinates,
 
           // Receiver info (prioritize Shipbubble response)
-          receiverName: ship_to?.name || req.body.receiver_name,
-          receiverPhone: ship_to?.phone || req.body.receiver_phone,
-          receiverEmail: ship_to?.email || req.body.receiver_email,
-          receiverAddress: ship_to?.address || req.body.receiver_address,
+          receiverName:
+            result.data.data.ship_to?.name || req.body.receiver_name,
+          receiverPhone:
+            result.data.data.ship_to?.phone || req.body.receiver_phone,
+          receiverEmail:
+            result.data.data.ship_to?.email || req.body.receiver_email,
+          receiverAddress:
+            result.data.data.ship_to?.address || req.body.receiver_address,
           receiverCity: req.body.receiver_city,
           receiverState: req.body.receiver_state,
           receiverCountry: req.body.receiver_country,
@@ -131,7 +135,7 @@ export const createShipmentService = async (req, res) => {
 
           // Shipment details
           courierId: req.body.courier_id,
-          weight: parseFloat(req.body.weight) || 0,
+          weight: parseFloat(req.body.weight),
           dimension: req.body.dimension,
           category: req.body.category,
           description: req.body.description,
@@ -217,7 +221,7 @@ export const createShipmentService = async (req, res) => {
           ...result.data,
           // Our database data
           shipmentId: shipment.id,
-          trackingNumber: shipment.trackingNumber,
+          trackingNumber: result.data.data.order_id,
           user: {
             id: req.user.id,
             email: req.user.email,
