@@ -3,85 +3,25 @@ import prisma from "../prismaClient.js";
 import { makeShipbubbleRequest } from "./shipbubble.service.js";
 
 export const trackShipmentService = async (req, res) => {
-  try {
-    const trackingNumber = req.params.trackingNumber;
+  const trackingNumber = req.params.trackingNumber;
 
-    // Find shipment in our database
-    const shipment = await prisma.shipment.findFirst({
-      where: {
-        OR: [
-          { trackingNumber: trackingNumber },
-          { shipbubbleId: trackingNumber },
-        ],
-        userId: req.user.id,
-      },
-    });
+  // Fetch all shipments from Shipbubble
+  const response = await makeShipbubbleRequest("/shipping/labels", "GET", null);
 
-    if (!shipment) {
-      return res.status(404).json({
-        success: false,
-        message: "Shipment not found in our records",
-      });
-    }
+  // Get all shipments from the response
+  const allShipments = response.data.data.results;
 
-    // Fetch all shipments from Shipbubble
-    const result = await makeShipbubbleRequest("/shipping/labels", "GET", null);
+  // Search for shipment where order_id matches the tracking number
+  const foundShipment = allShipments.find(
+    (shipment) => shipment.order_id === trackingNumber
+  );
 
-    if (!result.success || !result.data?.results) {
-      // If API fails, return local data
-      return res.json({
-        success: true,
-        trackingUrl: shipment.trackingUrl,
-        status: shipment.status,
-        message: "Using cached tracking information",
-        lastUpdated: shipment.lastUpdated,
-      });
-    }
+  return res.json({
+    success: true,
+    message: "Shipment found successfully",
 
-    // Find matching shipment in Shipbubble response
-    const matchedShipment = result.data.results.find(
-      (item) => item.order_id === shipment.shipbubbleId
-    );
-
-    if (!matchedShipment) {
-      return res.json({
-        success: true,
-        trackingUrl: shipment.trackingUrl,
-        status: shipment.status,
-        message: "Shipment not found in courier system yet",
-        lastUpdated: shipment.lastUpdated,
-      });
-    }
-
-    // Update local database with latest info
-    await prisma.shipment.update({
-      where: { id: shipment.id },
-      data: {
-        status: matchedShipment.status,
-        trackingUrl: matchedShipment.tracking_url,
-        lastUpdated: new Date(),
-        currentLocation: matchedShipment.events?.[0]?.location || null,
-      },
-    });
-
-    // Return the tracking information
-    res.json({
-      success: true,
-      trackingUrl: matchedShipment.tracking_url,
-      status: matchedShipment.status,
-      courier: matchedShipment.courier,
-      events: matchedShipment.events || [],
-      packageStatus: matchedShipment.package_status || [],
-      lastUpdated: new Date(),
-    });
-  } catch (error) {
-    console.error("Tracking error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to track shipment",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
-  }
+    data: foundShipment,
+  });
 };
 
 export const trackMultipleShipmentsService = async (req, res) => {
