@@ -53,14 +53,11 @@ export const createShipmentService = async (req, res) => {
         req.body
       );
 
-      if (
-        result.data.data.status !== "success" ||
-        !result.data?.data?.order_id
-      ) {
+      if (!result.success || !result.data?.data?.order_id) {
         console.error("Invalid Shipbubble API response:", result);
         return res.status(400).json({
           success: false,
-          message: result.message || "Failed to create shipment",
+          message: result || "Failed to create shipment",
           details: result.data || result,
         });
       }
