@@ -120,14 +120,10 @@ export const createShipmentService = async (req, res) => {
           senderCoordinates: senderCoordinates,
 
           // Receiver info (prioritize Shipbubble response)
-          receiverName:
-            result.data.data.ship_to?.name || req.body.receiver_name,
-          receiverPhone:
-            result.data.data.ship_to?.phone || req.body.receiver_phone,
-          receiverEmail:
-            result.data.data.ship_to?.email || req.body.receiver_email,
-          receiverAddress:
-            result.data.data.ship_to?.address || req.body.receiver_address,
+          receiverName: req.body.receiver_name,
+          receiverPhone: req.body.receiver_phone,
+          receiverEmail: req.body.receiver_email,
+          receiverAddress: req.body.receiver_address,
           receiverCity: req.body.receiver_city,
           receiverState: req.body.receiver_state,
           receiverCountry: req.body.receiver_country,
