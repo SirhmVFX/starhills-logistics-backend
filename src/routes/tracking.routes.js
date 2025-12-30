@@ -9,8 +9,8 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/multiple", authMiddleware, trackMultipleShipments);
-router.get("/:trackingNumber", authMiddleware, trackShipment);
-router.get("/:trackingNumber/events", authMiddleware, getTrackingEvents);
+router.post("/multiple", trackMultipleShipments);
+router.get("/:trackingNumber", trackShipment);
+router.get("/:trackingNumber/events", getTrackingEvents);
 
 export default router;
