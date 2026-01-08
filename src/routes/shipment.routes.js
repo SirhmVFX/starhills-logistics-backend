@@ -15,7 +15,7 @@ router.post("/create", authMiddleware, createShipment);
 router.get("/", authMiddleware, getShipments);
 router.get("/statistics", authMiddleware, getShipmentStatistics);
 router.get("/:shipmentId", authMiddleware, getShipmentById);
-router.delete("/:shipmentId", authMiddleware, cancelShipment);
+router.post("/:shipmentId", authMiddleware, cancelShipment);
 router.get("/:shipmentId/waybill", authMiddleware, getShipmentWaybill);
 
 export default router;
