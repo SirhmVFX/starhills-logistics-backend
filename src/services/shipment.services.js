@@ -308,39 +308,37 @@ export const getShipmentByIdService = async (req, res) => {
 
 export const cancelShipmentService = async (req, res) => {
   try {
-    const order_id = req.params.order_id;
-    const { reason } = req.body;
+    const order_id = req.params.shipmentId;
 
     // Validate input
     if (!order_id) {
       return res.status(400).json({
         success: false,
-        message: "Tracking number is required",
+        message: "Tracking number or Order ID is required",
       });
     }
 
     // Find the shipment in our database
     const shipment = await prisma.shipment.findFirst({
       where: {
-        OR: [{ trackingNumber: order_id }, { shipbubbleId: order_id }],
-        userId: req.user.id,
+        trackingNumber: order_id,
       },
       select: {
         id: true,
         trackingNumber: true,
-        shipbubbleId: true,
         status: true,
+        amount: true,
       },
     });
 
     if (!shipment) {
       return res.status(404).json({
         success: false,
-        message: "Shipment not found or you don't have permission to cancel it",
+        message: "Shipment not found",
       });
     }
 
-    // Check if shipment is already cancelled
+    // Check if shipment is already cancelled in db
     if (shipment.status === "cancelled") {
       return res.status(400).json({
         success: false,
@@ -348,28 +346,75 @@ export const cancelShipmentService = async (req, res) => {
       });
     }
 
-    // In cancelShipmentService, before calling Shipbubble API:
-    const nonCancellableStatuses = ["in_transit", "completed", "delivered"];
-    if (nonCancellableStatuses.includes(shipment.status)) {
-      return res.status(400).json({
+    // Fetch all shipments from Shipbubble
+    const response = await makeShipbubbleRequest("/shipping/labels", "GET");
+
+    // Get all shipments from the response
+    const allShipments = response.data.data.results;
+
+    // Search for shipment where order_id matches the tracking number
+    const foundShipment = allShipments.find(
+      (shipbubbleShipment) => shipbubbleShipment.order_id === order_id
+    );
+
+    if (!foundShipment) {
+      return res.status(404).json({
         success: false,
-        message: `Cannot cancel shipment with status: ${shipment.status}. Please contact support.`,
+        message: "Shipment not found in courier system",
       });
     }
 
-    // Call Shipbubble API to cancel the shipment
-    const result = await makeShipbubbleRequest(
-      `/shipping/labels/cancel/${order_id}`,
-      "POST",
-      { reason }
-    );
+    // Check if shipment is already cancelled in Shipbubble
+    if (foundShipment.status === "cancelled") {
+      // Update our database to match
+      await prisma.shipment.update({
+        where: { id: shipment.id },
+        data: {
+          status: "cancelled",
+          cancelledAt: new Date(),
+          lastUpdated: new Date(),
+        },
+      });
 
-    if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: result.message || "Failed to cancel shipment with courier",
-        error: result.error,
+        message: "Shipment is already cancelled in courier system",
       });
+    }
+
+    // Check if shipment can be cancelled based on status
+    const nonCancellableStatuses = ["in_transit", "completed", "delivered"];
+    if (nonCancellableStatuses.includes(foundShipment.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot cancel shipment with status: ${foundShipment.status}. Please contact support.`,
+      });
+    }
+
+    // Use Shipbubble's internal ID to cancel
+    const shipbubbleOrderId = foundShipment.order_id;
+
+    // Call Shipbubble API to cancel the shipment
+    const result = await makeShipbubbleRequest(
+      `/shipping/labels/cancel/${shipbubbleOrderId}`,
+      "POST"
+    );
+
+    console.log(result);
+
+    // Check if Shipbubble API call was successful
+
+    if (!result || result.success !== true) {
+      // If the error is because the shipment is already processed, we can still proceed
+      if (result?.message?.includes("already processed")) {
+        console.log("Shipment was already processed, updating local status...");
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: result?.message || "Failed to cancel shipment with courier",
+          error: result?.error,
+        });
+      }
     }
 
     // Update the shipment status in our database
@@ -377,26 +422,32 @@ export const cancelShipmentService = async (req, res) => {
       where: { id: shipment.id },
       data: {
         status: "cancelled",
-        cancellationReason: reason,
         cancelledAt: new Date(),
         lastUpdated: new Date(),
       },
     });
 
-    // In cancelShipmentService, after updating shipment status:
-    if (shipment.status === "confirmed" || shipment.status === "picked_up") {
-      // Get the shipment amount to refund
-      const shipmentAmount = await prisma.shipment.findUnique({
-        where: { id: shipment.id },
-        select: { amount: true },
+    // Process refund if applicable
+    let refundProcessed = false;
+    const shippingFee = foundShipment.payment?.shipping_fee || 0;
+
+    if (
+      (foundShipment.status === "confirmed" ||
+        foundShipment.status === "picked_up") &&
+      shippingFee > 0
+    ) {
+      // Get user's wallet
+      const wallet = await prisma.wallet.findUnique({
+        where: { userId: req.user.id },
+        select: { id: true },
       });
 
-      if (shipmentAmount.amount > 0) {
+      if (wallet) {
         // Refund to wallet
         await prisma.wallet.update({
           where: { userId: req.user.id },
           data: {
-            balance: { increment: shipmentAmount.amount },
+            balance: { increment: shippingFee },
           },
         });
 
@@ -404,33 +455,36 @@ export const cancelShipmentService = async (req, res) => {
         await prisma.transaction.create({
           data: {
             walletId: wallet.id,
-            amount: shipmentAmount.amount,
+            amount: shippingFee,
             type: "CREDIT",
-            reference: `REFUND-${shipment.id}`,
+            reference: `REFUND-${shipment.id}-${Date.now()}`,
             status: "COMPLETED",
-            description: `Refund for cancelled shipment: ${shipment.trackingNumber}`,
+            description: `Refund for cancelled shipment: ${order_id}`,
             metadata: {
               shipmentId: shipment.id,
-              originalReference: `SHIP-${shipment.id}`,
-              reason: reason,
+              cancelledAt: new Date().toISOString(),
             },
           },
         });
+
+        refundProcessed = true;
       }
     }
 
     // Create notification
     await prisma.notification.create({
       data: {
-        userId: req.user.id,
         type: "shipment_cancelled",
         title: "Shipment Cancelled",
-        message: `Shipment ${shipment.trackingNumber} has been cancelled${reason ? `: ${reason}` : ""}`,
+        message: `Shipment ${order_id} has been cancelled`,
         data: {
           shipmentId: shipment.id,
-          trackingNumber: shipment.trackingNumber,
+          trackingNumber: order_id,
           status: "cancelled",
+          refundProcessed: refundProcessed,
         },
+        isRead: false,
+        userId: req.user.id,
       },
     });
 
@@ -439,16 +493,36 @@ export const cancelShipmentService = async (req, res) => {
       success: true,
       message: result.message || "Shipment cancelled successfully",
       data: {
-        trackingNumber: shipment.trackingNumber,
+        trackingNumber: order_id,
         status: "cancelled",
         cancelledAt: updatedShipment.cancelledAt,
+        refundProcessed: refundProcessed,
       },
     });
   } catch (error) {
     console.error("Error cancelling shipment:", error);
-    res.status(500).json({
+
+    // More specific error handling
+    let errorMessage = "An error occurred while cancelling the shipment";
+    let statusCode = 500;
+
+    if (error.code === "P2025") {
+      errorMessage = "Shipment not found in database";
+      statusCode = 404;
+    } else if (error.code === "P2002") {
+      errorMessage = "Database constraint error";
+      statusCode = 409;
+    } else if (error.response?.status === 404) {
+      errorMessage = "Shipment not found in courier system";
+      statusCode = 404;
+    } else if (error.response?.status === 422) {
+      errorMessage = "Invalid tracking number";
+      statusCode = 422;
+    }
+
+    res.status(statusCode).json({
       success: false,
-      message: "An error occurred while cancelling the shipment",
+      message: errorMessage,
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
