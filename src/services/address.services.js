@@ -5,10 +5,33 @@ export const validateAddressService = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
+    const { name, email, phone, address } = req.body;
+
+    const phoneRegex = /^(?:\+?234|0)?[789][01]\d{8}$/;
+    let formattedPhone = phone;
+    if (phone.startsWith("234")) {
+      formattedPhone = "0" + phone.substring(3);
+    } else if (phone.startsWith("+234")) {
+      formattedPhone = "0" + phone.substring(4);
+    } else if (!phone.startsWith("0")) {
+      formattedPhone = "0" + phone;
+    }
+    if (!phoneRegex.test(formattedPhone)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid Nigerian phone number format. Please provide a valid phone number starting with 0, 234, or +234",
+      });
+    }
     const result = await makeShipbubbleRequest(
       "/shipping/address/validate",
       "POST",
-      req.body
+      {
+        name,
+        email,
+        phone: formattedPhone,
+        address,
+      }
     );
 
     if (!result.success) {
