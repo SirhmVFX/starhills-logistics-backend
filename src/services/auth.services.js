@@ -64,7 +64,12 @@ export const registerService = async (req, res) => {
     }
 
     const existingUserByEmail = await prisma.user.findUnique({
-      where: { email },
+      where: {
+        email: {
+          equals: email.toLowerCase().trim(),
+          mode: "insensitive", // This makes the search case-insensitive
+        },
+      },
     });
     if (existingUserByEmail) {
       return res.status(400).json({
@@ -73,12 +78,32 @@ export const registerService = async (req, res) => {
       });
     }
 
+    const existingUserByPhone = await prisma.user.findUnique({
+      where: {
+        phone: {
+          equals: phone,
+          mode: "insensitive", // This makes the search case-insensitive
+        },
+      },
+    });
+    if (existingUserByPhone) {
+      return res.status(400).json({
+        success: false,
+        message: "User with this phone number already exists",
+      });
+    }
+
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Delete any existing OTP for this email
     await prisma.otp.deleteMany({
-      where: { email },
+      where: {
+        email: {
+          equals: email.toLowerCase().trim(),
+          mode: "insensitive", // This makes the search case-insensitive
+        },
+      },
     });
 
     // Create new OTP record in the database
@@ -96,7 +121,7 @@ export const registerService = async (req, res) => {
     // Create new user
     const newUser = await prisma.user.create({
       data: {
-        email,
+        email: email.toLowerCase().trim(),
         phone,
         password: await bcrypt.hash(password, 10), // hash password
         fullName,
@@ -308,7 +333,14 @@ export const loginService = async (req, res) => {
         .json({ success: false, message: "Password is required" });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: {
+        email: {
+          equals: email.toLowerCase().trim(),
+          mode: "insensitive", // This makes the search case-insensitive
+        },
+      },
+    });
 
     if (!user) {
       return res
