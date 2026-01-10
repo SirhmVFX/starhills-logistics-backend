@@ -56,8 +56,17 @@ export const registerService = async (req, res) => {
         .json({ success: false, message: "Password is required" });
     }
 
-    const phoneRegex = /^(?:\+?[1-9]\d{6,14}|0\d{9,14})$/;
-    if (!phoneRegex.test(phone)) {
+    const phoneRegex = /^(?:\+?234|0)?[789][01]\d{8}$/;
+    // Add leading zero if missing
+    let formattedPhone = phone;
+    if (phone.startsWith("234")) {
+      formattedPhone = "0" + phone.substring(3);
+    } else if (phone.startsWith("+234")) {
+      formattedPhone = "0" + phone.substring(4);
+    } else if (!phone.startsWith("0")) {
+      formattedPhone = "0" + phone;
+    }
+    if (!phoneRegex.test(formattedPhone)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid phone number" });
@@ -81,7 +90,7 @@ export const registerService = async (req, res) => {
     const existingUserByPhone = await prisma.user.findUnique({
       where: {
         phone: {
-          equals: phone,
+          equals: formattedPhone,
           mode: "insensitive", // This makes the search case-insensitive
         },
       },
@@ -109,7 +118,7 @@ export const registerService = async (req, res) => {
     // Create new OTP record in the database
     await prisma.otp.create({
       data: {
-        phone,
+        phone: formattedPhone,
         otp,
         expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes from now
         password,
@@ -122,7 +131,7 @@ export const registerService = async (req, res) => {
     const newUser = await prisma.user.create({
       data: {
         email: email.toLowerCase().trim(),
-        phone,
+        phone: formattedPhone,
         password: await bcrypt.hash(password, 10), // hash password
         fullName,
         role: "CUSTOMER",
