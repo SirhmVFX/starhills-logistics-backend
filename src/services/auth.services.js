@@ -74,10 +74,7 @@ export const registerService = async (req, res) => {
 
     const existingUserByEmail = await prisma.user.findUnique({
       where: {
-        email: {
-          equals: email.toLowerCase().trim(),
-          mode: "insensitive", // This makes the search case-insensitive
-        },
+        email: email.toLowerCase().trim(),
       },
     });
     if (existingUserByEmail) {
@@ -89,10 +86,7 @@ export const registerService = async (req, res) => {
 
     const existingUserByPhone = await prisma.user.findUnique({
       where: {
-        phone: {
-          equals: formattedPhone,
-          mode: "insensitive", // This makes the search case-insensitive
-        },
+        phone: formattedPhone,
       },
     });
     if (existingUserByPhone) {
@@ -108,10 +102,8 @@ export const registerService = async (req, res) => {
     // Delete any existing OTP for this email
     await prisma.otp.deleteMany({
       where: {
-        email: {
-          equals: email.toLowerCase().trim(),
-          mode: "insensitive", // This makes the search case-insensitive
-        },
+        email: email.toLowerCase().trim(),
+        mode: "insensitive", // This makes the search case-insensitive
       },
     });
 
@@ -344,10 +336,7 @@ export const loginService = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: {
-        email: {
-          equals: email.toLowerCase().trim(),
-          mode: "insensitive", // This makes the search case-insensitive
-        },
+        email: email.toLowerCase().trim(),
       },
     });
 
