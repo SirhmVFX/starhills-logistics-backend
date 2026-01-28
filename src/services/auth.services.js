@@ -103,7 +103,6 @@ export const registerService = async (req, res) => {
     await prisma.otp.deleteMany({
       where: {
         email: email.toLowerCase().trim(),
-        mode: "insensitive", // This makes the search case-insensitive
       },
     });
 
